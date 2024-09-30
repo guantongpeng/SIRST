@@ -1,0 +1,1 @@
+PYTHONPATH=/home/guantp/Infrared/SIRST/models/RevCol/mmsegmentation python tools/train.py /home/guantp/Infrared/SIRST/models/RevCol/mmsegmentation/configs/revcol/test.py
