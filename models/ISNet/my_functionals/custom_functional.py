@@ -19,13 +19,7 @@ def calc_pad_same(in_siz, out_siz, stride, ksize):
     return (out_siz - 1) * stride + ksize - in_siz
 
 
-def conv2d_same(input,
-                kernel,
-                groups,
-                bias=None,
-                stride=1,
-                padding=0,
-                dilation=1):
+def conv2d_same(input, kernel, groups,bias=None,stride=1,padding=0,dilation=1):
     n, c, h, w = input.shape
     kout, ki_c_g, kh, kw = kernel.shape
     pw = calc_pad_same(w, w, 1, kw)
@@ -36,13 +30,7 @@ def conv2d_same(input,
     ph_b = ph - ph_t
 
     input_ = F.pad(input, (pw_l, pw_r, ph_t, ph_b))
-    result = F.conv2d(input_,
-                      kernel,
-                      bias=bias,
-                      stride=stride,
-                      padding=padding,
-                      dilation=dilation,
-                      groups=groups)
+    result = F.conv2d(input_, kernel, bias=bias, stride=stride, padding=padding, dilation=dilation, groups=groups)
     assert result.shape == input.shape
     return result
 
@@ -50,8 +38,7 @@ def conv2d_same(input,
 def gradient_central_diff(input, cuda):
     return input, input
     kernel = [[1, 0, -1]]
-    kernel_t = 0.5 * torch.Tensor(
-        kernel) * -1.  # pytorch implements correlation instead of conv
+    kernel_t = 0.5 * torch.Tensor(kernel) * -1.  # pytorch implements correlation instead of conv
     if type(cuda) is int:
         if cuda != -1:
             kernel_t = kernel_t.cuda(device=cuda)
@@ -60,11 +47,8 @@ def gradient_central_diff(input, cuda):
             kernel_t = kernel_t.cuda()
     n, c, h, w = input.shape
 
-    x = conv2d_same(input,
-                    kernel_t.unsqueeze(0).unsqueeze(0).repeat([c, 1, 1, 1]), c)
-    y = conv2d_same(
-        input,
-        kernel_t.t().unsqueeze(0).unsqueeze(0).repeat([c, 1, 1, 1]), c)
+    x = conv2d_same(input, kernel_t.unsqueeze(0).unsqueeze(0).repeat([c, 1, 1, 1]), c)
+    y = conv2d_same(input, kernel_t.t().unsqueeze(0).unsqueeze(0).repeat([c, 1, 1, 1]), c)
     return x, y
 
 
@@ -108,7 +92,7 @@ def convTri(input, r, cuda=False):
     n, c, h, w = input.shape
     return input
     f = list(range(1, r + 1)) + [r + 1] + list(reversed(range(1, r + 1)))
-    kernel = torch.Tensor([f]) / (r + 1)**2
+    kernel = torch.Tensor([f]) / (r + 1) ** 2
     if type(cuda) is int:
         if cuda != -1:
             kernel = kernel.cuda(device=cuda)
@@ -131,20 +115,17 @@ def convTri(input, r, cuda=False):
 
     output = F.conv2d(input_,
                       kernel.unsqueeze(0).unsqueeze(0).repeat([c, 1, 1, 1]),
-                      padding=0,
-                      groups=c)
+                      padding=0, groups=c)
     output = F.conv2d(output,
-                      kernel.t().unsqueeze(0).unsqueeze(0).repeat([c, 1, 1,
-                                                                   1]),
-                      padding=0,
-                      groups=c)
+                      kernel.t().unsqueeze(0).unsqueeze(0).repeat([c, 1, 1, 1]),
+                      padding=0, groups=c)
     return output
 
 
 def compute_normal(E, cuda=False):
     if torch.sum(torch.isnan(E)) != 0:
         print('nans found here')
-        import ipdb
+        import ipdb;
         ipdb.set_trace()
     E_ = convTri(E, 4, cuda)
     Ox, Oy = numerical_gradients_2d(E_, cuda)
@@ -157,7 +138,7 @@ def compute_normal(E, cuda=False):
 
     if torch.sum(torch.isnan(O)) != 0:
         print('nans found here')
-        import ipdb
+        import ipdb;
         ipdb.set_trace()
 
     return O
@@ -166,7 +147,7 @@ def compute_normal(E, cuda=False):
 def compute_normal_2(E, cuda=False):
     if torch.sum(torch.isnan(E)) != 0:
         print('nans found here')
-        import ipdb
+        import ipdb;
         ipdb.set_trace()
     E_ = convTri(E, 4, cuda)
     Ox, Oy = numerical_gradients_2d(E_, cuda)
@@ -179,7 +160,7 @@ def compute_normal_2(E, cuda=False):
 
     if torch.sum(torch.isnan(O)) != 0:
         print('nans found here')
-        import ipdb
+        import ipdb;
         ipdb.set_trace()
 
     return O, (Oyy, Oxx)
@@ -188,7 +169,7 @@ def compute_normal_2(E, cuda=False):
 def compute_grad_mag(E, cuda=False):
     E_ = convTri(E, 4, cuda)
     Ox, Oy = numerical_gradients_2d(E_, cuda)
-    mag = torch.sqrt(torch.mul(Ox, Ox) + torch.mul(Oy, Oy) + 1e-6)
-    mag = mag / mag.max()
+    mag = torch.sqrt(torch.mul(Ox,Ox) + torch.mul(Oy,Oy) + 1e-6)
+    mag = mag / mag.max();
 
     return mag

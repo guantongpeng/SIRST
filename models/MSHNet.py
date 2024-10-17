@@ -124,11 +124,11 @@ class MSHNet(nn.Module):
             mask2 = self.output_2(x_d2)
             mask3 = self.output_3(x_d3)
             output = self.final(torch.cat([mask0, self.up(mask1), self.up_4(mask2), self.up_8(mask3)], dim=1))
-            return [mask0, mask1, mask2, mask3], output
+            return output,mask0, mask1, mask2, mask3
     
         else:
             output = self.output_0(x_d0)
-            return [], output
+            return output
 
        
     

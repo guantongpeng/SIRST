@@ -10,4 +10,11 @@ PYTHONPATH=/home/guantp/Infrared/SIRST/models/RevCol/mmsegmentation python train
 
 PYTHONPATH=/home/guantp/Infrared/SIRST/models/RevCol/mmsegmentation python tools/train.py /home/guantp/Infrared/SIRST/models/RevCol/mmsegmentation/configs/revcol/upernet_revcol_tiny_fp16_512x512_160k_ade20k.py
 
-CUDA_VISIBLE_DEVICES=0
+CUDA_VISIBLE_DEVICES=0,1 python train.py --dataset 'NUDT-SIRST' --model 'SCTransNet' --loss_func 'fullySup' --train 1 --test 0 --deep_supervision True --batchsize 128 --epochs 1000 --lr 0.01 --base_size 256 256 --crop_size 256 --optimizer_name 'Adam' --test_epoch 1 --save_pred_img True
+
+CUDA_VISIBLE_DEVICES=0 python train.py --dataset 'SIRST' --model 'SCTransNet' --train 0 --test 1 --base_size 256 256 --crop_size 256 --save_pred_img True --pth_path 
+
+python train.py --dataset 'NUDT-SIRST' --model 'SCTransNet' --train 0 --test 1 --base_size 256 256 --crop_size 256 --save_pred_img True --pth_path 
+
+dataset MWIRSTD  NUDT-SIRST
+model SCTransNet

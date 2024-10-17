@@ -46,28 +46,29 @@ import torch
 import torch.nn as nn
 from torch.nn import init
 
-from models.ISNet.utils.AttrDict import AttrDict
+
+from model.ISNet.utils.AttrDict import AttrDict
+
 
 __C = AttrDict()
 # Consumers can get config by:
 # from fast_rcnn_config import cfg
 cfg = __C
 __C.EPOCH = 0
-__C.CLASS_UNIFORM_PCT = 0.0
-__C.BATCH_WEIGHTING = False
-__C.BORDER_WINDOW = 1
-__C.REDUCE_BORDER_EPOCH = -1
-__C.STRICTBORDERCLASS = None
+__C.CLASS_UNIFORM_PCT=0.0
+__C.BATCH_WEIGHTING=False
+__C.BORDER_WINDOW=1
+__C.REDUCE_BORDER_EPOCH= -1
+__C.STRICTBORDERCLASS= None
 
-__C.DATASET = AttrDict()
-__C.DATASET.CITYSCAPES_DIR = '/home/username/data/cityscapes'
-__C.DATASET.CV_SPLITS = 3
+__C.DATASET =AttrDict()
+__C.DATASET.CITYSCAPES_DIR='/home/username/data/cityscapes'
+__C.DATASET.CV_SPLITS=3
 
 __C.MODEL = AttrDict()
 __C.MODEL.BN = 'regularnorm'
 __C.MODEL.BNFUNC = torch.nn.BatchNorm2d
 __C.MODEL.BIGMEMORY = False
-
 
 def assert_and_infer_cfg(args, make_immutable=True):
     """Call this function in your script after you have finished setting all cfg
@@ -79,7 +80,7 @@ def assert_and_infer_cfg(args, make_immutable=True):
     """
 
     if args.batch_weighting:
-        __C.BATCH_WEIGHTING = True
+        __C.BATCH_WEIGHTING=True
 
     if args.syncbn:
         import encoding

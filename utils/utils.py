@@ -1,23 +1,18 @@
 # from SCTransNet
-import torch
-import numpy as np
-from PIL import Image
-from torchvision import transforms
-from torch.utils.data.dataset import Dataset
+import time
+import glob
+import os
 import random
-import matplotlib.pyplot as plt
-import cv2
+
 import numpy as np
-import os
-import math
+import torch
 import torch.nn as nn
-from skimage import measure
 import torch.nn.functional as F
-import os
 from torch.nn import init
 
-from torch.optim.lr_scheduler import _LRScheduler
-from torch.optim.lr_scheduler import ReduceLROnPlateau
+from PIL import Image, ImageDraw, ImageFont
+from torchvision.transforms import ToPILImage
+from torch.optim.lr_scheduler import _LRScheduler, ReduceLROnPlateau
 
 
 def seed_pytorch(seed=42):
@@ -30,68 +25,14 @@ def seed_pytorch(seed=42):
 
 def weights_init_kaiming(m):
     classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
+    if classname.find('Conv2d') != -1:
         init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
     elif classname.find('Linear') != -1:
         init.kaiming_normal_(m.weight.data, a=0, mode='fan_in')
     elif classname.find('BatchNorm') != -1:
         init.normal_(m.weight.data, 1.0, 0.02)
         init.constant_(m.bias.data, 0.0)  
-
-def Normalized(img, img_norm_cfg):
-    return (img - img_norm_cfg['mean']) / img_norm_cfg['std']
-
-
-def Denormalization(img, img_norm_cfg):
-    return img * img_norm_cfg['std'] + img_norm_cfg['mean']
-
-
-def get_img_norm_cfg(dataset_name, dataset_dir):
-    if dataset_name == 'NUAA-SIRST':
-        img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
-    elif dataset_name == 'NUDT-SIRST':
-        img_norm_cfg = dict(mean=107.80905151367188, std=33.02274703979492)
-    elif dataset_name == 'IRSTD-1K':
-        img_norm_cfg = dict(mean=87.4661865234375, std=39.71953201293945)
-    elif dataset_name == 'SIRST2':
-        img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
-    elif dataset_name == 'SIRST3':
-        img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
-    elif dataset_name == 'NUDT-SIRST-Sea':
-        img_norm_cfg = dict(mean=43.62403869628906, std=18.91838264465332)
-    elif dataset_name == 'SIRST4':
-        img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
-    elif dataset_name == 'SIRST5':
-        img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
-    elif dataset_name == 'SIRST6':
-        img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
-    elif dataset_name == 'SIRST7':
-        img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
-    elif dataset_name == 'IRDST-real':
-        img_norm_cfg = {'mean': 101.54053497314453, 'std': 56.49856185913086}
-    else:
-        with open(dataset_dir + '/' + dataset_name + '/img_idx/train_' + dataset_name + '.txt', 'r') as f:
-            train_list = f.read().splitlines()
-        with open(dataset_dir + '/' + dataset_name + '/img_idx/test_' + dataset_name + '.txt', 'r') as f:
-            test_list = f.read().splitlines()
-        img_list = train_list + test_list
-        img_dir = dataset_dir + '/' + dataset_name + '/images/'
-        mean_list = []
-        std_list = []
-        for img_pth in img_list:
-            try:
-                img = Image.open((img_dir + img_pth).replace('//', '/') + '.png').convert('I')
-            except:
-                try:
-                    img = Image.open((img_dir + img_pth).replace('//', '/') + '.jpg').convert('I')
-                except:
-                    img = Image.open((img_dir + img_pth).replace('//', '/') + '.bmp').convert('I')
-            img = np.array(img, dtype=np.float32)
-            mean_list.append(img.mean())
-            std_list.append(img.std())
-        img_norm_cfg = dict(mean=float(np.array(mean_list).mean()), std=float(np.array(std_list).mean()))
-    return img_norm_cfg
-
+    
 def get_optimizer(net, optimizer_name, scheduler_name, optimizer_settings, scheduler_settings):
     if optimizer_name == 'Adam':
         optimizer = torch.optim.Adam(net.parameters(), lr=optimizer_settings['lr'])
@@ -171,7 +112,6 @@ class GradualWarmupScheduler(_LRScheduler):
             if self.after_scheduler and (not self.finished):
                     self.after_scheduler.base_lrs = [base_lr * self.multiplier for base_lr in self.base_lrs]
                     self.finished = True
-                # !这是很关键的一个环节，需要直接返回新的base-lr
             return [base_lr for base_lr in self.after_scheduler.base_lrs]
         if self.multiplier == 1.0:
             return [base_lr * (float(self.last_epoch) / self.total_epoch) for base_lr in self.base_lrs]
@@ -209,3 +149,61 @@ class GradualWarmupScheduler(_LRScheduler):
                 return super(GradualWarmupScheduler, self).step(epoch)
         else:
             self.step_ReduceLROnPlateau(metrics, epoch)
+
+def generate_savepath(args, epoch, epoch_loss, IOU_part=''):
+
+    timestamp = time.time()
+    cur_time = time.strftime("%Y%m%d%H%M", time.localtime(timestamp))
+
+    save_path = args.result_path + args.dataset  + '_' + args.model_name + '/'
+    model_path = save_path + f'{args.batchsize}' + '_' + cur_time + '_net_epoch_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
+    parameter_path = save_path + f'{args.batchsize}' + '_' + cur_time + '_net_para_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
+
+    if not os.path.exists(args.result_path):
+        os.mkdir(args.result_path)
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+
+    return model_path, parameter_path, save_path
+
+def delete_pth_files(folder_path):
+    pth_files = glob.glob(os.path.join(folder_path, '*.pth'))
+    
+    for file_path in pth_files:
+        try:
+            os.remove(file_path)
+            print(f"delete pth file: {file_path}")
+        except Exception as e:
+            print(f"delete pth file  {file_path} error: {e}")
+            
+def save_pred_imgs(output, mask, save_path, img_id):
+    pred_img = ToPILImage()((output[0, 0, :, :])).convert('1')
+    pred_imgs_path = save_path + '/' + 'pred_imgs'
+    if not os.path.exists(pred_imgs_path):
+        os.makedirs(pred_imgs_path)
+    pred_img.save(pred_imgs_path + '/' + img_id[0] + '.png')
+    
+    img_width, img_height = pred_img.size
+    mixed_img = Image.new('1', (img_width * 3 + 2 * 6, img_height + 2 * 2 + 20))
+    draw = ImageDraw.Draw(mixed_img)
+    border_width = 2
+    font = ImageFont.load_default()
+    text_height = 20
+    label_img = ToPILImage()(mask[0, 0, :, :]).convert('1')
+    diff_img = ToPILImage()(np.abs(output - mask)[0, 0, :, :]).convert('1')
+    label_text = "Label"
+    pred_text = "Prediction"
+    diff_text = "Difference"
+    mixed_img.paste(label_img, (border_width, text_height + border_width))
+    draw.text((border_width, border_width // 2), label_text, font=font, fill=1)
+    draw.rectangle([(border_width, border_width), (img_width + border_width, img_height + border_width + text_height)], outline=1)
+    mixed_img.paste(pred_img, (img_width + border_width * 5, text_height + border_width))
+    draw.text((img_width + border_width * 3, border_width // 2), pred_text, font=font, fill=1)
+    draw.rectangle([(img_width + border_width * 3, border_width), (img_width * 2 + border_width * 3, img_height + border_width + text_height)], outline=1)
+    mixed_img.paste(diff_img, (img_width * 2 + border_width * 7, text_height + border_width))
+    draw.text((img_width * 2 + border_width * 5, border_width // 2), diff_text, font=font, fill=1)
+    draw.rectangle([(img_width * 2 + border_width * 5, border_width), (img_width * 3 + border_width * 5, img_height + border_width + text_height)], outline=1)
+    mixed_imgs_path = save_path + '/' + 'mix_imgs'
+    if not os.path.exists(mixed_imgs_path):
+        os.makedirs(mixed_imgs_path)
+    mixed_img.save(mixed_imgs_path + '/' + img_id[0] + '_mix.png')

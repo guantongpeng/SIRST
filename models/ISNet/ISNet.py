@@ -1,26 +1,23 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from .my_functionals import GatedSpatialConv as gsc
-from .network import Resnet
+from models.ISNet.my_functionals import GatedSpatialConv as gsc
+from models.ISNet.network import Resnet
 from torch.nn.parameter import Parameter
-from .DCNv2.TTOA import TTOA
-from models.layers import DTUM
-from models.model_ISNet.train_ISNet import Get_gradient_nopadding
+from models.ISNet.DCNv2.TTOA import TTOA
+from utils import *
+
 '''
 ISNet_TTOA
 '''
 
-
 class TFD(nn.Module):
-
     def __init__(self, inch, outch):
         super(TFD, self).__init__()
         self.res1 = Resnet.BasicBlock1(inch, outch, stride=1, downsample=None)
         self.res2 = Resnet.BasicBlock1(inch, outch, stride=1, downsample=None)
         self.gate = gsc.GatedSpatialConv2d(inch, outch)
-
-    def forward(self, x, f_x):
+    def forward(self,x,f_x):
         u_0 = x
         u_1, delta_u_0 = self.res1(u_0)
         _, u_2 = self.res2(u_1)
@@ -28,15 +25,14 @@ class TFD(nn.Module):
         u_3 = 3 * delta_u_0 + u_2 + u_3_pre
         return u_3
 
-
 class ResidualBlock(nn.Module):
-
     def __init__(self, in_channels, out_channels, stride, downsample):
         super(ResidualBlock, self).__init__()
         self.body = nn.Sequential(
             nn.Conv2d(in_channels, out_channels, 3, stride, 1, bias=False),
             nn.BatchNorm2d(out_channels),
             nn.ReLU(True),
+
             nn.Conv2d(out_channels, out_channels, 3, 1, 1, bias=False),
             nn.BatchNorm2d(out_channels),
         )
@@ -55,23 +51,23 @@ class ResidualBlock(nn.Module):
         if self.downsample:
             residual = self.downsample(residual)
 
-        out = F.relu(x + residual, True)
+        out = F.relu(x+residual, True)
         return out
 
-
 class _FCNHead(nn.Module):
-
     def __init__(self, in_channels, out_channels):
         super(_FCNHead, self).__init__()
         inter_channels = in_channels // 4
         self.block = nn.Sequential(
             nn.Conv2d(in_channels, inter_channels, 3, 1, 1, bias=False),
-            nn.BatchNorm2d(inter_channels), nn.ReLU(True), nn.Dropout(0.1),
-            nn.Conv2d(inter_channels, out_channels, 1, 1, 0))
+            nn.BatchNorm2d(inter_channels),
+            nn.ReLU(True),
+            nn.Dropout(0.1),
+            nn.Conv2d(inter_channels, out_channels, 1, 1, 0)
+        )
 
     def forward(self, x):
         return self.block(x)
-
 
 class sa_layer(nn.Module):
     """Constructs a Channel Spatial Group module.
@@ -89,8 +85,7 @@ class sa_layer(nn.Module):
         self.sbias = Parameter(torch.ones(1, channel // (2 * groups), 1, 1))
 
         self.sigmoid = nn.Sigmoid()
-        self.gn = nn.GroupNorm(channel // (2 * groups),
-                               channel // (2 * groups))
+        self.gn = nn.GroupNorm(channel // (2 * groups), channel // (2 * groups))
 
     @staticmethod
     def channel_shuffle(x, groups):
@@ -128,60 +123,51 @@ class sa_layer(nn.Module):
         return out
 
 
-class ISNet(nn.Module):
 
-    def __init__(self, layer_blocks, channels, num_classes=1):
+    
+
+class ISNet(nn.Module):
+    def __init__(self, mode='test', layer_blocks=[4] * 3, channels=[8, 16, 32, 64]):
         super(ISNet, self).__init__()
 
+        self.mode = mode
         stem_width = int(channels[0])
         self.stem = nn.Sequential(
-            nn.BatchNorm2d(3),
-            nn.Conv2d(3, stem_width, 3, 2, 1, bias=False),
+            nn.BatchNorm2d(1),
+            nn.Conv2d(1, stem_width, 3, 2, 1, bias=False),
             nn.BatchNorm2d(stem_width),
             nn.ReLU(True),
+
             nn.Conv2d(stem_width, stem_width, 3, 1, 1, bias=False),
             nn.BatchNorm2d(stem_width),
             nn.ReLU(True),
-            nn.Conv2d(stem_width, 2 * stem_width, 3, 1, 1, bias=False),
-            nn.BatchNorm2d(2 * stem_width),
+
+            nn.Conv2d(stem_width, 2*stem_width, 3, 1, 1, bias=False),
+            nn.BatchNorm2d(2*stem_width),
             nn.ReLU(True),
+
             nn.MaxPool2d(3, 2, 1),
         )
-        self.TTOA_low = TTOA(channels[2], channels[2])
-        self.TTOA_high = TTOA(channels[1], channels[1])
-        self.layer1 = self._make_layer(block=ResidualBlock,
-                                       block_num=layer_blocks[0],
-                                       in_channels=channels[1],
-                                       out_channels=channels[1],
-                                       stride=1)
-        self.layer2 = self._make_layer(block=ResidualBlock,
-                                       block_num=layer_blocks[1],
-                                       in_channels=channels[1],
-                                       out_channels=channels[2],
-                                       stride=2)
-        self.layer3 = self._make_layer(block=ResidualBlock,
-                                       block_num=layer_blocks[2],
-                                       in_channels=channels[2],
-                                       out_channels=channels[3],
-                                       stride=2)
+        self.TTOA_low = TTOA(channels[2],channels[2])
+        self.TTOA_high = TTOA(channels[1],channels[1])
+        self.layer1 = self._make_layer(block=ResidualBlock, block_num=layer_blocks[0],
+                                       in_channels=channels[1], out_channels=channels[1], stride=1)
+        self.layer2 = self._make_layer(block=ResidualBlock, block_num=layer_blocks[1],
+                                       in_channels=channels[1], out_channels=channels[2], stride=2)
+        self.layer3 = self._make_layer(block=ResidualBlock, block_num=layer_blocks[2],
+                                       in_channels=channels[2], out_channels=channels[3], stride=2)
 
         self.deconv2 = nn.ConvTranspose2d(channels[3], channels[2], 4, 2, 1)
 
-        self.uplayer2 = self._make_layer(block=ResidualBlock,
-                                         block_num=layer_blocks[1],
-                                         in_channels=channels[2],
-                                         out_channels=channels[2],
-                                         stride=1)
+        self.uplayer2 = self._make_layer(block=ResidualBlock, block_num=layer_blocks[1],
+                                         in_channels=channels[2], out_channels=channels[2], stride=1)
 
         self.deconv1 = nn.ConvTranspose2d(channels[2], channels[1], 4, 2, 1)
 
-        self.uplayer1 = self._make_layer(block=ResidualBlock,
-                                         block_num=layer_blocks[0],
-                                         in_channels=channels[1],
-                                         out_channels=channels[1],
-                                         stride=1)
+        self.uplayer1 = self._make_layer(block=ResidualBlock, block_num=layer_blocks[0],
+                                         in_channels=channels[1], out_channels=channels[1], stride=1)
 
-        self.head = _FCNHead(channels[1], num_classes)
+        self.head = _FCNHead(channels[1], 1)
         #edge branch
         self.dsn1 = nn.Conv2d(64, 1, 1)
         self.dsn2 = nn.Conv2d(32, 1, 1)
@@ -205,15 +191,18 @@ class ISNet(nn.Module):
         self.sigmoid = nn.Sigmoid()
         self.SA = sa_layer(4, 2)
         self.SA_att = sa_layer(17, 2)
-        self.dsup = nn.Conv2d(3, 64, 1)
+        self.dsup = nn.Conv2d(1, 64, 1)
         self.head2 = _FCNHead(channels[1], 3)
         self.conv2_1 = nn.Conv2d(3, 1, 1)
         self.conv16 = nn.Conv2d(3, 16, 1)
-        self.myb1 = TFD(64, 64)
-        self.myb2 = TFD(64, 64)
-        self.myb3 = TFD(64, 64)
+        self.myb1 = TFD(64,64)
+        self.myb2 = TFD(64,64)
+        self.myb3 = TFD(64,64)
+        
+        self.grad = Get_gradient_nopadding()
 
-    def forward(self, x, x_grad):
+    def forward(self, x):
+        x_grad = self.grad(x)
         _, _, hei, wid = x.shape
         x_size = x.size()
 
@@ -221,6 +210,8 @@ class ISNet(nn.Module):
         c1 = self.layer1(x1)
         c2 = self.layer2(c1)
         c3 = self.layer3(c2)
+
+
 
         deconc2 = self.deconv2(c3)
         fusec2 = self.TTOA_low(deconc2, c2)
@@ -230,23 +221,11 @@ class ISNet(nn.Module):
         fusec1 = self.TTOA_high(deconc1, c1)
         upc1 = self.uplayer1(fusec1)
 
-        s1 = F.interpolate(self.dsn1(c3),
-                           size=[hei, wid],
-                           mode='bilinear',
-                           align_corners=True)
-        s2 = F.interpolate(self.dsn2(upc2),
-                           size=[hei, wid],
-                           mode='bilinear',
-                           align_corners=True)
-        s3 = F.interpolate(self.dsn3(upc1),
-                           size=[hei, wid],
-                           mode='bilinear',
-                           align_corners=True)
+        s1 = F.interpolate(self.dsn1(c3), size=[hei, wid ], mode='bilinear', align_corners=True)
+        s2 = F.interpolate(self.dsn2(upc2), size=[hei , wid], mode='bilinear', align_corners=True)
+        s3 = F.interpolate(self.dsn3(upc1), size=[hei, wid], mode='bilinear', align_corners=True)
 
-        m1f = F.interpolate(x_grad,
-                            size=[hei, wid],
-                            mode='bilinear',
-                            align_corners=True)
+        m1f = F.interpolate(x_grad, size=[hei, wid], mode='bilinear', align_corners=True)
         m1f = self.dsup(m1f)
         cs1 = self.myb1(m1f, s1)
         cs2 = self.myb2(cs1, s2)
@@ -271,161 +250,34 @@ class ISNet(nn.Module):
         layer = []
         downsample = (in_channels != out_channels) or (stride != 1)
         layer.append(block(in_channels, out_channels, stride, downsample))
-        for _ in range(block_num - 1):
+        for _ in range(block_num-1):
             layer.append(block(out_channels, out_channels, 1, False))
         return nn.Sequential(*layer)
 
-
-class ISNet_woTFD(nn.Module):
-
-    def __init__(self, layer_blocks, channels, num_classes=1):
-        super(ISNet_woTFD, self).__init__()
-
-        stem_width = int(channels[0])
-        self.stem = nn.Sequential(
-            nn.BatchNorm2d(3),
-            nn.Conv2d(3, stem_width, 3, 2, 1, bias=False),
-            nn.BatchNorm2d(stem_width),
-            nn.ReLU(True),
-            nn.Conv2d(stem_width, stem_width, 3, 1, 1, bias=False),
-            nn.BatchNorm2d(stem_width),
-            nn.ReLU(True),
-            nn.Conv2d(stem_width, 2 * stem_width, 3, 1, 1, bias=False),
-            nn.BatchNorm2d(2 * stem_width),
-            nn.ReLU(True),
-            nn.MaxPool2d(3, 2, 1),
-        )
-        self.TTOA_low = TTOA(channels[2], channels[2])
-        self.TTOA_high = TTOA(channels[1], channels[1])
-        self.layer1 = self._make_layer(block=ResidualBlock,
-                                       block_num=layer_blocks[0],
-                                       in_channels=channels[1],
-                                       out_channels=channels[1],
-                                       stride=1)
-        self.layer2 = self._make_layer(block=ResidualBlock,
-                                       block_num=layer_blocks[1],
-                                       in_channels=channels[1],
-                                       out_channels=channels[2],
-                                       stride=2)
-        self.layer3 = self._make_layer(block=ResidualBlock,
-                                       block_num=layer_blocks[2],
-                                       in_channels=channels[2],
-                                       out_channels=channels[3],
-                                       stride=2)
-
-        self.deconv2 = nn.ConvTranspose2d(channels[3], channels[2], 4, 2, 1)
-
-        self.uplayer2 = self._make_layer(block=ResidualBlock,
-                                         block_num=layer_blocks[1],
-                                         in_channels=channels[2],
-                                         out_channels=channels[2],
-                                         stride=1)
-
-        self.deconv1 = nn.ConvTranspose2d(channels[2], channels[1], 4, 2, 1)
-
-        self.uplayer1 = self._make_layer(block=ResidualBlock,
-                                         block_num=layer_blocks[0],
-                                         in_channels=channels[1],
-                                         out_channels=channels[1],
-                                         stride=1)
-
-        self.head = _FCNHead(channels[1], num_classes)
-        #edge branch
-        self.dsn1 = nn.Conv2d(64, 1, 1)
-        self.dsn2 = nn.Conv2d(32, 1, 1)
-        self.dsn3 = nn.Conv2d(16, 1, 1)
-
-        self.res1 = Resnet.BasicBlock(64, 64, stride=1, downsample=None)
-        self.d1 = nn.Conv2d(64, 32, 1)
-
-        self.res2 = Resnet.BasicBlock(32, 32, stride=1, downsample=None)
-        self.d2 = nn.Conv2d(32, 16, 1)
-
-        self.res3 = Resnet.BasicBlock(16, 16, stride=1, downsample=None)
-        self.d3 = nn.Conv2d(16, 8, 1)
-
-        self.cw = nn.Conv2d(4, 1, kernel_size=1, padding=0, bias=False)
-
-        self.gate1 = gsc.GatedSpatialConv2d(32, 32)
-        self.gate2 = gsc.GatedSpatialConv2d(16, 16)
-        self.gate3 = gsc.GatedSpatialConv2d(8, 8)
-        self.sigmoid = nn.Sigmoid()
-        self.SA = sa_layer(4, 2)
-        self.SA_att = sa_layer(17, 2)
-        self.conv2_1 = nn.Conv2d(3, 1, 1)
-        self.conv16 = nn.Conv2d(3, 16, 1)
+class Get_gradient_nopadding(nn.Module):
+    def __init__(self):
+        super(Get_gradient_nopadding, self).__init__()
+        kernel_v = [[0, -1, 0],
+                    [0, 0, 0],
+                    [0, 1, 0]]
+        kernel_h = [[0, 0, 0],
+                    [-1, 0, 1],
+                    [0, 0, 0]]
+        kernel_h = torch.FloatTensor(kernel_h).unsqueeze(0).unsqueeze(0)
+        kernel_v = torch.FloatTensor(kernel_v).unsqueeze(0).unsqueeze(0)
+        self.weight_h = nn.Parameter(data=kernel_h, requires_grad=False).cuda()
+        self.weight_v = nn.Parameter(data=kernel_v, requires_grad=False).cuda()
 
     def forward(self, x):
-        _, _, hei, wid = x.shape
-        x_size = x.size()
+        x0 = x[:, 0]
+        x0_v = F.conv2d(x0.unsqueeze(1), self.weight_v, padding=1)
+        x0_h = F.conv2d(x0.unsqueeze(1), self.weight_h, padding=1)
 
-        x1 = self.stem(x)
-        c1 = self.layer1(x1)
-        c2 = self.layer2(c1)
-        c3 = self.layer3(c2)
+        x0 = torch.sqrt(torch.pow(x0_v, 2) + torch.pow(x0_h, 2) + 1e-6)
 
-        deconc2 = self.deconv2(c3)
-        fusec2 = self.TTOA_low(deconc2, c2)
-        upc2 = self.uplayer2(fusec2)
-
-        deconc1 = self.deconv1(upc2)
-        fusec1 = self.TTOA_high(deconc1, c1)
-        upc1 = self.uplayer1(fusec1)
-
-        # cat = torch.cat((edge_out, x_grad), dim=1)
-        # cat = self.SA(cat)
-        # acts = self.cw(cat)
-        # acts = self.sigmoid(acts)
-        upc1 = F.interpolate(upc1, size=[hei, wid], mode='bilinear')
-        fuse = upc1
-
-        pred = self.head(fuse)
-
-        out = F.interpolate(pred, size=[hei, wid], mode='bilinear')
-        return out
-
-    def _make_layer(self, block, block_num, in_channels, out_channels, stride):
-        layer = []
-        downsample = (in_channels != out_channels) or (stride != 1)
-        layer.append(block(in_channels, out_channels, stride, downsample))
-        for _ in range(block_num - 1):
-            layer.append(block(out_channels, out_channels, 1, False))
-        return nn.Sequential(*layer)
-
-
-class ISNet_DTUM(nn.Module):
-
-    def __init__(self, layer_blocks, channels, num_classes=1):
-        super(ISNet_DTUM, self).__init__()
-        self.ISNet = ISNet(layer_blocks, channels, 32)
-        self.DTUM = DTUM(32, num_classes, num_frames=5)
-        self.grad = Get_gradient_nopadding()
-
-    def forward(self, X_In, Old_Feat, OldFlag):
-
-        FrameNum = X_In.shape[2]
-        Features = X_In[:, :, -1, :, :]  # [2,3,512,512]
-        edge_in = self.grad(Features)
-        Features, edge_outs = self.ISNet(Features, edge_in)
-        Features = torch.unsqueeze(Features, 2)
-
-        if OldFlag == 1:  # append current features based on Old Features, for iteration input
-            Features = torch.cat([Old_Feat, Features], 2)
-
-        if OldFlag == 0 and FrameNum > 1:
-            for i_fra in range(FrameNum - 1):
-                x_t = X_In[:, :, -2 - i_fra, :, :]
-                x_t, _ = self.ISNet(x_t, self.grad(x_t))
-                x_t = torch.unsqueeze(x_t, 2)
-                Features = torch.cat([x_t, Features], 2)
-
-        X_Out = self.DTUM(Features)
-
-        Old_Feat = Features[:, :, 1:, :, :]
-
-        return (X_Out, Old_Feat), edge_outs
-
+        return x0
 
 if __name__ == '__main__':
-    net = ISNet(layer_blocks=[4] * 3, channels=[8, 16, 32, 64])
+    net = ISNet(layer_blocks = [4] * 3,
+        channels = [8, 16, 32, 64])
     print(net)

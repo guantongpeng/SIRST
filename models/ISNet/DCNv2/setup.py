@@ -17,13 +17,13 @@ def get_extensions():
     main_file = glob.glob(os.path.join(extensions_dir, "*.cpp"))
     source_cpu = glob.glob(os.path.join(extensions_dir, "cpu", "*.cpp"))
     source_cuda = glob.glob(os.path.join(extensions_dir, "cuda", "*.cu"))
-
     os.environ["CC"] = "g++"
     sources = main_file + source_cpu
     extension = CppExtension
     extra_compile_args = {"cxx": []}
     define_macros = []
 
+    
     if torch.cuda.is_available() and CUDA_HOME is not None:
         extension = CUDAExtension
         sources += source_cuda
@@ -58,12 +58,7 @@ setup(
     author="charlesshang",
     url="https://github.com/charlesshang/DCNv2",
     description="deformable convolutional networks",
-    packages=find_packages(
-        exclude=(
-            "configs",
-            "tests",
-        )
-    ),
+    packages=find_packages(exclude=("configs", "tests")),
     # install_requires=requirements,
     ext_modules=get_extensions(),
     cmdclass={"build_ext": torch.utils.cpp_extension.BuildExtension},

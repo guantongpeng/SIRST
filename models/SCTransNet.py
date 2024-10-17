@@ -753,7 +753,7 @@ class _SCTransNet(nn.Module):
 
     def __init__(self,
                  config,
-                 n_channels=3,
+                 n_channels=1,
                  n_classes=1,
                  img_size=256,
                  vis=False,
@@ -762,7 +762,6 @@ class _SCTransNet(nn.Module):
         super().__init__()
         self.vis = vis
         self.deepsuper = deepsuper
-        print('Deep-Supervision:', deepsuper)
         self.mode = mode
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -869,48 +868,24 @@ class _SCTransNet(nn.Module):
             d0 = self.outconv(torch.cat((gt2, gt3, gt4, gt5, out), 1))
 
             if self.mode == 'train':
-                return (torch.sigmoid(gt5), torch.sigmoid(gt4),
-                        torch.sigmoid(gt3), torch.sigmoid(gt2),
-                        torch.sigmoid(d0), torch.sigmoid(out))
+                return [out, d0, gt2, gt3, gt4, gt5]
             else:
-                return torch.sigmoid(out)
+                return out
         else:
-            return torch.sigmoid(out)
+            return out
 
 class SCTransNet(nn.Module):
-    def __init__(self, mode):
+    def __init__(self, mode, deep_supervision=True):
         super(SCTransNet, self).__init__()
         # ************************************************loss*************************************************#
+        # self.cal_loss = nn.BCELoss(size_average=True)
         self.cal_loss = nn.BCELoss(size_average=True)
         if mode == 'train':
-            self.model = _SCTransNet(config_vit, mode='train', deepsuper=True)
+            self.model = _SCTransNet(config_vit, mode='train', deepsuper=deep_supervision)
         else:
-            self.model = _SCTransNet(config_vit, mode='test', deepsuper=True)
+            self.model = _SCTransNet(config_vit, mode='test', deepsuper=deep_supervision)
     def forward(self, img):
         return self.model(img)
-
-    def loss(self, preds, gt_masks):
-        if isinstance(preds, list):
-            loss_total = 0
-            for i in range(len(preds)):
-                pred = preds[i]
-                gt_mask = gt_masks[i]
-                loss = self.cal_loss(pred, gt_mask)
-                loss_total = loss_total + loss
-            return loss_total / len(preds)
-
-        elif isinstance(preds, tuple):
-            a = []
-            for i in range(len(preds)):
-                pred = preds[i]
-                loss = self.cal_loss(pred, gt_masks)
-                a.append(loss)
-            loss_total = a[0] + a[1] + a[2] + a[3] + a[4] + a[5]
-            return loss_total
-
-        else:
-            loss = self.cal_loss(preds, gt_masks)
-            return loss
         
         
 if __name__ == '__main__':

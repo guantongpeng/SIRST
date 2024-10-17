@@ -539,7 +539,7 @@ class UpsampleBlock(nn.Module):
 class PyramidMiM_enc(nn.Module):
     """ Pyramid MiM-ISTD encoder including conv stem for computer vision
     """
-    def __init__(self, configs=None, img_size=512, in_chans=3, num_classes=1, mlp_ratio=4., qkv_bias=False,
+    def __init__(self, configs=None, img_size=512, in_chans=1, num_classes=1, mlp_ratio=4., qkv_bias=False,
                 qk_scale=None, drop_rate=0., attn_drop_rate=0., drop_path_rate=0., norm_layer=nn.LayerNorm, se=0):
         super().__init__()
         self.num_classes = num_classes

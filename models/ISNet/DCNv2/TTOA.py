@@ -1,10 +1,6 @@
 import torch
 import torch.nn as nn
-from .dcn_v2 import DCN
-
-
-
-
+from model.ISNet.DCNv2.DCN.modules.deform_conv import DeformConvPack as DCN
 
 class TTOA(nn.Module):
     def __init__(self,low_channels,high_channels,c_kernel=3,r_kernel=3,use_att=False,use_process=True):

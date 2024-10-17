@@ -1,10 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#############################################
 from .fusion import *
-from models.layers import DTUM
-##################################################
+
 
 class REBNCONV(nn.Module):
     def __init__(self,in_ch=3,out_ch=3,dirate=1):
@@ -319,10 +317,10 @@ class RSU4F(nn.Module):
 ##### UIU-net ####
 class UIUNET(nn.Module):
 
-    def __init__(self, in_ch=3, out_ch=1, deep_supervision=False):
+    def __init__(self, input_channels=3, out_ch=1, deep_supervision=False):
         super(UIUNET, self).__init__()
 
-        self.stage1 = RSU7(in_ch,32,64)
+        self.stage1 = RSU7(input_channels,32,64)
         self.pool12 = nn.MaxPool2d(2,stride=2,ceil_mode=True)
 
         self.stage2 = RSU6(64,32,128)
@@ -457,47 +455,13 @@ class UIUNET(nn.Module):
         d0 = self.outconv(torch.cat((d1,d2,d3,d4,d5,d6),1))
 
         if self.deep_supervision:
-            d1 = self.side1_1(d1)  # 1
+            d1 = self.side1_1(d1)
             d2 = self.side2_1(d2)
             d3 = self.side3_1(d3)
             d4 = self.side4_1(d4)
             d5 = self.side5_1(d5)
             d6 = self.side6_1(d6)
 
-        # return F.sigmoid(d0), F.sigmoid(d1), F.sigmoid(d2), F.sigmoid(d3), F.sigmoid(d4), F.sigmoid(d5), F.sigmoid(d6)
         return [d0, d1, d2, d3, d4, d5, d6]
-
-
-
-
-class UIUNET_DTUM(nn.Module):
-    def __init__(self, in_ch=3, out_ch=1, deep_supervision=False):
-        super(UIUNET_DTUM, self).__init__()
-        self.UIUNET = UIUNET(in_ch=in_ch, out_ch=32, deep_supervision=deep_supervision)
-        self.DTUM = DTUM(32, out_ch, num_frames=5)
-
-    def forward(self, X_In, Old_Feat, OldFlag):
-
-        FrameNum = X_In.shape[2]
-        Features = X_In[:, :, -1, :, :]           # [2,3,512,512]
-        Features, d1,d2,d3,d4,d5,d6 = self.UIUNET(Features)
-        Features = torch.unsqueeze(Features, 2)
-
-        if OldFlag == 1:  # append current features based on Old Features, for iteration input
-            Features = torch.cat([Old_Feat, Features], 2)
-
-        if OldFlag == 0 and FrameNum > 1:
-            for i_fra in range(FrameNum - 1):
-                x_t = X_In[:, :, -2 - i_fra, :, :]
-                x_t, _,_,_,_,_,_ = self.UIUNET(x_t)
-                x_t = torch.unsqueeze(x_t, 2)
-                Features = torch.cat([x_t, Features], 2)
-
-        X_Out = self.DTUM(Features)
-
-        Old_Feat = Features[:,:,1:,:,:]
-
-        return (X_Out, Old_Feat), d1,d2,d3,d4,d5,d6
-
 
 
