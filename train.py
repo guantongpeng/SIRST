@@ -74,12 +74,12 @@ class Trainer(object):
             self.train_loader = DataLoader(self.train_dataset, batch_size=args.batchsize, shuffle=True, drop_last=True)
             self.val_dataset = MWIRSTD_Dataset(self.test_path,  train=False, base_size=args.base_size,crop_size=args.crop_size)
             self.val_loader = DataLoader(self.val_dataset, batch_size=1, shuffle=False)           
-        elif args.dataset == 'IRSTD-1k':
-            self.train_dataset = IRSTD_1K_Dataset(train_path, train=True, base_size=args.base_size, crop_size=args.crop_size)
-            self.train_loader = DataLoader(self.train_dataset, batch_size=args.batchsize, shuffle=True, drop_last=True)
-            self.val_dataset = IRSTD_1K_Dataset(self.test_path, train=False)
-            self.val_loader = DataLoader(self.val_dataset, batch_size=1, shuffle=False)
-        elif args.dataset in ['SIRST', 'NUDT-SIRST']:
+        # elif args.dataset == 'IRSTD-1k':
+        #     self.train_dataset = IRSTD_1K_Dataset(train_path, train=True, base_size=args.base_size, crop_size=args.crop_size)
+        #     self.train_loader = DataLoader(self.train_dataset, batch_size=args.batchsize, shuffle=True, drop_last=True)
+        #     self.val_dataset = IRSTD_1K_Dataset(self.test_path, train=False)
+        #     self.val_loader = DataLoader(self.val_dataset, batch_size=1, shuffle=False)
+        elif args.dataset in ['SIRST', 'NUDT-SIRST', 'IRSTD-1k']:
             spilt_txt = './datasets/split_datasets/' + args.dataset
             self.train_dataset = SIRST_Dataset(train_path, spilt_txt, dataset_name=args.dataset, train=True, base_size=args.base_size,crop_size=args.crop_size,)
             # self.train_loader = DataLoader(self.train_dataset, batch_size=args.batchsize, shuffle=True, drop_last=True)
@@ -87,7 +87,7 @@ class Trainer(object):
             self.val_dataset = SIRST_Dataset(self.test_path, spilt_txt, dataset_name=args.dataset, train=False, base_size=args.base_size,crop_size=args.crop_size,)
             self.val_loader = DataLoader(self.val_dataset, batch_size=1, shuffle=False)
         else:
-            raise BaseException('Error dataset name, support datasets ["NUDT-MIRSDT", "MWIRSTD", "IRSTD-1k", "SIRST", "NUDT-SIRST"]')
+            raise BaseException(f'Error dataset name {args.dataset}, support datasets ["NUDT-MIRSDT", "MWIRSTD", "IRSTD-1k", "SIRST", "NUDT-SIRST"]')
         
          ### Default settings of SCTransNet
         if args.optimizer_name == 'Adam':
@@ -156,7 +156,7 @@ class Trainer(object):
         self.epoch_loss = float(np.array(total_loss_epoch).mean())
         lr_now= self.optimizer.param_groups[0]['lr']
 
-        print(f'model: {args.model_name}, loss: {args.loss_func}, epoch: {epoch}, loss: {self.epoch_loss:.5f}, lr:{lr_now}')
+        print(f'dataset:{args.dataset}, model: {args.model_name}, loss: {args.loss_func}, epoch: {epoch}, loss: {self.epoch_loss:.5f}, lr:{lr_now}')
         self.log_file.write(f'model: {args.model_name}, loss: {args.loss_func}, epoch: {epoch}, loss: {self.epoch_loss:.5f}, lr:{lr_now}\n')
         
         self.scheduler.step()

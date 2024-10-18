@@ -9,6 +9,8 @@ from models.UIUNet.uiunet import UIUNET
 from models.SCTransNet import SCTransNet
 from models.RDIAN import RDIAN
 from models.UNet import U_Net, R2U_Net, AttU_Net, R2AttU_Net, NestedUNet
+from models.EGEUNet import EGEUNet
+from models.EffisegNet import EffiSegNet
 # from models.ISNet.ISNet import ISNet
 from models.MSHNet import MSHNet
 from models.MiM import MiM
@@ -67,9 +69,27 @@ def model_chose(model_name, deep_supervision=True, num_classes=1, input_channels
     elif model_name == 'SCTransNet':
         net = SCTransNet(mode='train', deep_supervision=deep_supervision)       
 
+    elif model_name == 'EGEUNet':
+        net = EGEUNet()  
+        
     elif model_name == 'UNet':
         net = U_Net(n1=32)
 
+    elif model_name == 'AttUNet':
+        net = AttU_Net(n1=32)
+
+    elif model_name == 'R2UNet':
+        net = R2U_Net(n1=32)
+        
+    elif model_name == 'R2AttUNet':
+        net = R2AttU_Net(n1=32)
+        
+    elif model_name == 'NestedUNet':
+        net = NestedUNet(n1=32)
+
+    elif model_name == 'EffiSegNet':
+        net = EffiSegNet(deep_supervision=deep_supervision)
+                
     elif model_name == 'RDIAN':
         net = RDIAN()    
                     

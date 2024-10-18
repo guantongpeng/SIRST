@@ -1,5 +1,5 @@
 # BatchSize 影响结果 
-
+# SCTransNet
 batchsize = 16 
 loss 0.0007593862545229619
 mIoU 78.59294320137694

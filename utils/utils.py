@@ -155,14 +155,14 @@ def generate_savepath(args, epoch, epoch_loss, IOU_part=''):
     timestamp = time.time()
     cur_time = time.strftime("%Y%m%d%H%M", time.localtime(timestamp))
 
-    save_path = args.result_path + args.dataset  + '_' + args.model_name + '/'
+    save_path = args.result_path + args.dataset  + '_' + args.model_name + '/models/'
     model_path = save_path + f'{args.batchsize}' + '_' + cur_time + '_net_epoch_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
     parameter_path = save_path + f'{args.batchsize}' + '_' + cur_time + '_net_para_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
 
     if not os.path.exists(args.result_path):
-        os.mkdir(args.result_path)
+        os.makedirs(args.result_path, exist_ok=True)
     if not os.path.exists(save_path):
-        os.mkdir(save_path)
+        os.makedirs(save_path, exist_ok=True)
 
     return model_path, parameter_path, save_path
 

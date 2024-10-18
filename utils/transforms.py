@@ -168,12 +168,10 @@ def get_img_norm_cfg(dataset_name, dataset_dir):
         img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
     elif dataset_name == 'NUDT-SIRST':
         img_norm_cfg = dict(mean=107.80905151367188, std=33.02274703979492)
-    elif dataset_name == 'IRSTD-1K':
+    elif dataset_name == 'IRSTD-1k':
         img_norm_cfg = dict(mean=87.4661865234375, std=39.71953201293945)
-    elif dataset_name == 'SIRST2':
-        img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
     elif dataset_name == 'SIRST3':
-        img_norm_cfg = dict(mean=101.06385040283203, std=34.619606018066406)
+        img_norm_cfg = dict(mean=95.010, std=41.511)
     elif dataset_name == 'NUDT-SIRST-Sea':
         img_norm_cfg = dict(mean=43.62403869628906, std=18.91838264465332)
     elif dataset_name == 'MWIRSTD':

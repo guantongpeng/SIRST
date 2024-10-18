@@ -28,7 +28,7 @@ def parse_args():
     parser.add_argument('--model_name', type=str, default='DNANet', help='ACM, ALCNet, ResUNet, DNANet, ISNet, UIU, SCTransNet, MiM, MSHNet')
     parser.add_argument('--pth_path', type=str, default='./model_weights/ResUNet_DTUM.pth', help='Trained model path')
     parser.add_argument('--img_size', nargs='*', type=int, default=[256, 256])
-    parser.add_argument('--opset_version', type=int, default=12)
+    parser.add_argument('--opset_version', type=int, default=14)
     args = parser.parse_args()
 
     # the parser

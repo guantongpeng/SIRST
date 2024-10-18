@@ -1,0 +1,22 @@
+Namespace(datapath='../datasets/', dataset='SIRST', result_path='./results/', train=1, test=0, pth_path='./model_weights/ResUNet_DTUM.pth', base_size=[256, 256], crop_size=256, model_name='RevCol2', loss_func='SoftIoULoss', batchsize=16, epochs=100, optimizer_name='Adagrad', lr=0.01, lrate_min=1e-05, lr_step=40, deep_supervision='True', test_epoch=20, threshold=0.5, save_pred_img=False, optimizer_settings={'lr': 0.05}, scheduler_name='CosineAnnealingLR', scheduler_settings={'epochs': 100, 'eta_min': 1e-05})
+model: RevCol2, loss: SoftIoULoss, epoch: 1, loss: 0.99941, lr:0.0
+model: RevCol2, loss: SoftIoULoss, epoch: 2, loss: 0.99940, lr:0.005000000000000001
+model: RevCol2, loss: SoftIoULoss, epoch: 3, loss: 0.99934, lr:0.010000000000000002
+model: RevCol2, loss: SoftIoULoss, epoch: 4, loss: 0.99940, lr:0.015
+model: RevCol2, loss: SoftIoULoss, epoch: 5, loss: 0.99941, lr:0.020000000000000004
+model: RevCol2, loss: SoftIoULoss, epoch: 6, loss: 0.99941, lr:0.025
+model: RevCol2, loss: SoftIoULoss, epoch: 7, loss: 0.99943, lr:0.03
+model: RevCol2, loss: SoftIoULoss, epoch: 8, loss: 0.99943, lr:0.034999999999999996
+model: RevCol2, loss: SoftIoULoss, epoch: 9, loss: 0.99942, lr:0.04000000000000001
+model: RevCol2, loss: SoftIoULoss, epoch: 10, loss: 0.99942, lr:0.045000000000000005
+model: RevCol2, loss: SoftIoULoss, epoch: 11, loss: 0.99941, lr:0.05
+model: RevCol2, loss: SoftIoULoss, epoch: 12, loss: 0.99939, lr:0.05
+model: RevCol2, loss: SoftIoULoss, epoch: 13, loss: 0.99942, lr:0.0499847737213423
+model: RevCol2, loss: SoftIoULoss, epoch: 14, loss: 0.99943, lr:0.049939113436244305
+model: RevCol2, loss: SoftIoULoss, epoch: 15, loss: 0.99938, lr:0.04986307477472999
+model: RevCol2, loss: SoftIoULoss, epoch: 16, loss: 0.99924, lr:0.04975675037819555
+model: RevCol2, loss: SoftIoULoss, epoch: 17, loss: 0.99796, lr:0.04962026978654013
+model: RevCol2, loss: SoftIoULoss, epoch: 18, loss: 0.99804, lr:0.049453799280341465
+model: RevCol2, loss: SoftIoULoss, epoch: 19, loss: 0.99774, lr:0.04925754167826852
+model: RevCol2, loss: SoftIoULoss, epoch: 20, loss: 0.99796, lr:0.049031736089978274
+Epoch:20, eval loss:0.9541, mIoU:0.0000, nIoU:0.0000,  F1_score:0.0000, FA:0.0000, PD:0.0000

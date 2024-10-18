@@ -1,0 +1,44 @@
+Namespace(datapath='../datasets/', dataset='SIRST', result_path='./results/', train=1, test=0, pth_path='./model_weights/ResUNet_DTUM.pth', base_size=[256, 256], crop_size=256, model_name='RevCol2', loss_func='BCELoss', batchsize=128, epochs=100, optimizer_name='Adam', lr=0.01, lrate_min=1e-05, lr_step=40, deep_supervision='True', test_epoch=20, threshold=0.5, save_pred_img=False, optimizer_settings={'lr': 0.001}, scheduler_name='CosineAnnealingLR', scheduler_settings={'epochs': 100, 'eta_min': 1e-05, 'last_epoch': -1})
+model: RevCol2, loss: BCELoss, epoch: 1, loss: 0.68697, lr:0.0
+model: RevCol2, loss: BCELoss, epoch: 2, loss: 0.60702, lr:0.0001
+model: RevCol2, loss: BCELoss, epoch: 3, loss: 0.46868, lr:0.0002
+model: RevCol2, loss: BCELoss, epoch: 4, loss: 0.38100, lr:0.0003
+model: RevCol2, loss: BCELoss, epoch: 5, loss: 0.32931, lr:0.0004
+model: RevCol2, loss: BCELoss, epoch: 6, loss: 0.29756, lr:0.0005
+model: RevCol2, loss: BCELoss, epoch: 7, loss: 0.27326, lr:0.0006
+model: RevCol2, loss: BCELoss, epoch: 8, loss: 0.25445, lr:0.0007
+model: RevCol2, loss: BCELoss, epoch: 9, loss: 0.23531, lr:0.0008
+model: RevCol2, loss: BCELoss, epoch: 10, loss: 0.21527, lr:0.0009000000000000001
+model: RevCol2, loss: BCELoss, epoch: 11, loss: 0.19624, lr:0.001
+model: RevCol2, loss: BCELoss, epoch: 12, loss: 0.18143, lr:0.001
+model: RevCol2, loss: BCELoss, epoch: 13, loss: 0.16703, lr:0.0009996984593744526
+model: RevCol2, loss: BCELoss, epoch: 14, loss: 0.15229, lr:0.000998794204878613
+model: RevCol2, loss: BCELoss, epoch: 15, loss: 0.13811, lr:0.0009972883382072955
+model: RevCol2, loss: BCELoss, epoch: 16, loss: 0.12560, lr:0.0009951826940270776
+model: RevCol2, loss: BCELoss, epoch: 17, loss: 0.11454, lr:0.0009924798377410433
+model: RevCol2, loss: BCELoss, epoch: 18, loss: 0.10443, lr:0.0009891830623632342
+model: RevCol2, loss: BCELoss, epoch: 19, loss: 0.09452, lr:0.0009852963845066185
+model: RevCol2, loss: BCELoss, epoch: 20, loss: 0.08509, lr:0.0009808245394894682
+Epoch:20, eval loss:0.0783, mIoU:0.0000, nIoU:0.0000,  F1_score:0.0000, FA:0.0000, PD:0.0000
+model: RevCol2, loss: BCELoss, epoch: 21, loss: 0.07614, lr:0.0009757729755661015
+model: RevCol2, loss: BCELoss, epoch: 22, loss: 0.06764, lr:0.000970147847289025
+model: RevCol2, loss: BCELoss, epoch: 23, loss: 0.05952, lr:0.0009639560080105602
+model: RevCol2, loss: BCELoss, epoch: 24, loss: 0.05190, lr:0.0009572050015330878
+model: RevCol2, loss: BCELoss, epoch: 25, loss: 0.04480, lr:0.0009499030529180881
+model: RevCol2, loss: BCELoss, epoch: 26, loss: 0.03845, lr:0.0009420590584651693
+model: RevCol2, loss: BCELoss, epoch: 27, loss: 0.03280, lr:0.0009336825748732976
+model: RevCol2, loss: BCELoss, epoch: 28, loss: 0.02774, lr:0.0009247838075974312
+model: RevCol2, loss: BCELoss, epoch: 29, loss: 0.02340, lr:0.000915373598414746
+model: RevCol2, loss: BCELoss, epoch: 30, loss: 0.01970, lr:0.0009054634122155993
+model: RevCol2, loss: BCELoss, epoch: 31, loss: 0.01690, lr:0.0008950653230353278
+model: RevCol2, loss: BCELoss, epoch: 32, loss: 0.01439, lr:0.0008841919993438944
+model: RevCol2, loss: BCELoss, epoch: 33, loss: 0.01235, lr:0.0008728566886113104
+model: RevCol2, loss: BCELoss, epoch: 34, loss: 0.01077, lr:0.0008610732011676325
+model: RevCol2, loss: BCELoss, epoch: 35, loss: 0.00941, lr:0.0008488558933772038
+model: RevCol2, loss: BCELoss, epoch: 36, loss: 0.00864, lr:0.0008362196501476351
+model: RevCol2, loss: BCELoss, epoch: 37, loss: 0.00772, lr:0.0008231798667948372
+model: RevCol2, loss: BCELoss, epoch: 38, loss: 0.00726, lr:0.0008097524302862012
+model: RevCol2, loss: BCELoss, epoch: 39, loss: 0.00680, lr:0.0007959536998847746
+model: RevCol2, loss: BCELoss, epoch: 40, loss: 0.00641, lr:0.00078180048721802
+Epoch:40, eval loss:0.0059, mIoU:0.0000, nIoU:0.0000,  F1_score:0.0000, FA:0.0000, PD:0.0000
+model: RevCol2, loss: BCELoss, epoch: 41, loss: 0.00587, lr:0.0007673100357954367

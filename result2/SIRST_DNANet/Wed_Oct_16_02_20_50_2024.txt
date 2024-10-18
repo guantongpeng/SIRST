@@ -1,0 +1,7 @@
+Namespace(datapath='../datasets/', dataset='SIRST', result_path='./results/', train=1, test=0, pth_path='./model_weights/ResUNet_DTUM.pth', base_size=[256, 256], crop_size=256, model_name='DNANet', loss_func='SoftIoULoss', batchsize=16, epochs=3, optimizer_name='Adam', lr=0.01, lrate_min=1e-05, lr_step=40, deep_supervision='True', test_epoch=1, threshold=0.5, save_pred_img=False, optimizer_settings={'lr': 0.001}, scheduler_name='CosineAnnealingLR', scheduler_settings={'epochs': 3, 'eta_min': 1e-05, 'last_epoch': -1})
+model: DNANet, loss: SoftIoULoss, epoch: 1, loss: 0.99962, lr:0.0
+Epoch:1, eval loss:0.9996, mIoU:0.0132, nIoU:0.0124,  F1_score:0.0264, FA:433941.4239, PD:7.9848
+model: DNANet, loss: SoftIoULoss, epoch: 2, loss: 0.99898, lr:0.0001
+Epoch:2, eval loss:0.9989, mIoU:0.1656, nIoU:1.6166,  F1_score:0.3307, FA:296684.0863, PD:25.8555
+model: DNANet, loss: SoftIoULoss, epoch: 3, loss: 0.99792, lr:0.0002
+Epoch:3, eval loss:0.9975, mIoU:0.4569, nIoU:2.8001,  F1_score:0.9097, FA:112370.3942, PD:33.4601

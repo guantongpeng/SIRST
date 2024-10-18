@@ -1,0 +1,2 @@
+/home/guantp/Infrared/SIRST/results/MWIRSTD_UNet/16_202410162344_net_epoch_500_loss_0.2259.pth
+Epoch:1000, eval loss:0.2691, mIoU:77.6356, nIoU:71.8368,  F1_score:87.4094, FA:117.3686, PD:78.0822

@@ -1,0 +1,25 @@
+Namespace(datapath='../datasets/', dataset='SIRST', result_path='./results/', train=1, test=0, pth_path='./model_weights/ResUNet_DTUM.pth', base_size=[256, 256], crop_size=256, model_name='RevCol2', loss_func='SoftIoULoss', batchsize=16, epochs=500, optimizer_name='Adam', lr=0.01, lrate_min=1e-05, lr_step=40, deep_supervision='True', test_epoch=50, threshold=0.5, save_pred_img=False, optimizer_settings={'lr': 0.001}, scheduler_name='CosineAnnealingLR', scheduler_settings={'epochs': 500, 'eta_min': 1e-05, 'last_epoch': -1})
+model: RevCol2, loss: SoftIoULoss, epoch: 1, loss: 2.99830, lr:0.0
+model: RevCol2, loss: SoftIoULoss, epoch: 2, loss: 2.99812, lr:0.0001
+model: RevCol2, loss: SoftIoULoss, epoch: 3, loss: 2.99808, lr:0.0002
+model: RevCol2, loss: SoftIoULoss, epoch: 4, loss: 2.99801, lr:0.0003
+model: RevCol2, loss: SoftIoULoss, epoch: 5, loss: 2.99808, lr:0.0004
+model: RevCol2, loss: SoftIoULoss, epoch: 6, loss: 2.99791, lr:0.0005
+model: RevCol2, loss: SoftIoULoss, epoch: 7, loss: 2.99782, lr:0.0006
+model: RevCol2, loss: SoftIoULoss, epoch: 8, loss: 2.99782, lr:0.0007
+model: RevCol2, loss: SoftIoULoss, epoch: 9, loss: 2.99779, lr:0.0008
+model: RevCol2, loss: SoftIoULoss, epoch: 10, loss: 2.99772, lr:0.0009000000000000001
+model: RevCol2, loss: SoftIoULoss, epoch: 11, loss: 2.99783, lr:0.001
+model: RevCol2, loss: SoftIoULoss, epoch: 12, loss: 2.99777, lr:0.001
+model: RevCol2, loss: SoftIoULoss, epoch: 13, loss: 2.99732, lr:0.0009999898262443912
+model: RevCol2, loss: SoftIoULoss, epoch: 14, loss: 2.99762, lr:0.000999959305395768
+model: RevCol2, loss: SoftIoULoss, epoch: 15, loss: 2.99752, lr:0.000999908438708723
+model: RevCol2, loss: SoftIoULoss, epoch: 16, loss: 2.99703, lr:0.0009998372282741866
+model: RevCol2, loss: SoftIoULoss, epoch: 17, loss: 2.99624, lr:0.0009997456770193406
+model: RevCol2, loss: SoftIoULoss, epoch: 18, loss: 2.99606, lr:0.0009996337887074986
+model: RevCol2, loss: SoftIoULoss, epoch: 19, loss: 2.99641, lr:0.0009995015679379509
+model: RevCol2, loss: SoftIoULoss, epoch: 20, loss: 2.99515, lr:0.0009993490201457753
+model: RevCol2, loss: SoftIoULoss, epoch: 21, loss: 2.99473, lr:0.0009991761516016143
+model: RevCol2, loss: SoftIoULoss, epoch: 22, loss: 2.99478, lr:0.0009989829694114166
+model: RevCol2, loss: SoftIoULoss, epoch: 23, loss: 2.99495, lr:0.0009987694815161454
+model: RevCol2, loss: SoftIoULoss, epoch: 24, loss: 2.99480, lr:0.0009985356966914515
