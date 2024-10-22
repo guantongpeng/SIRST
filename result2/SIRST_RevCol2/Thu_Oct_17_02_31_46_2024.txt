@@ -1,4 +1,0 @@
-Namespace(datapath='../datasets/', dataset='SIRST', result_path='./results/', train=1, test=0, pth_path='./model_weights/ResUNet_DTUM.pth', base_size=[256, 256], crop_size=256, model_name='RevCol2', loss_func='SoftIoULoss', batchsize=16, epochs=500, optimizer_name='Adam', lr=0.01, lrate_min=1e-05, lr_step=40, deep_supervision='True', test_epoch=1, threshold=0.5, save_pred_img=False, optimizer_settings={'lr': 0.001}, scheduler_name='CosineAnnealingLR', scheduler_settings={'epochs': 500, 'eta_min': 1e-05, 'last_epoch': -1})
-model: RevCol2, loss: SoftIoULoss, epoch: 1, loss: 2.99826, lr:0.0
-Epoch:1, eval loss:0.9994, mIoU:0.0506, nIoU:0.0522,  F1_score:0.1011, FA:707591.4741, PD:0.3802
-model: RevCol2, loss: SoftIoULoss, epoch: 2, loss: 2.99803, lr:0.0001

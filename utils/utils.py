@@ -150,12 +150,12 @@ class GradualWarmupScheduler(_LRScheduler):
         else:
             self.step_ReduceLROnPlateau(metrics, epoch)
 
-def generate_savepath(args, epoch, epoch_loss, IOU_part=''):
+def generate_savepath(args, epoch, epoch_loss, loss, IOU_part=''):
 
     timestamp = time.time()
     cur_time = time.strftime("%Y%m%d%H%M", time.localtime(timestamp))
 
-    save_path = args.result_path + args.dataset  + '_' + args.model_name + '/models/'
+    save_path = args.result_path + args.dataset  + '_' + args.model_name + '_'+ str(loss).split('()')[0] + '/models/'
     model_path = save_path + f'{args.batchsize}' + '_' + cur_time + '_net_epoch_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
     parameter_path = save_path + f'{args.batchsize}' + '_' + cur_time + '_net_para_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
 

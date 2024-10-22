@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class SoftIoULoss(nn.Module):
+class SoftLoULoss(nn.Module):
     def __init__(self, batch=32):
-        super(SoftIoULoss, self).__init__()
+        super(SoftLoULoss, self).__init__()
         self.batch = batch
         self.bce_loss = nn.BCELoss()
 
@@ -23,9 +23,9 @@ class SoftIoULoss(nn.Module):
         loss = 1 - torch.mean(loss)
         loss1 = self.bce_loss(pred, target)
         return loss + loss1
-class SoftIoULoss1(nn.Module):
+class SoftLoULoss1(nn.Module):
     def __init__(self, batch=32):
-        super(SoftIoULoss1, self).__init__()
+        super(SoftLoULoss1, self).__init__()
         self.batch = batch
         self.bce_loss = nn.BCELoss()
 

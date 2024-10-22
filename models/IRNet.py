@@ -64,7 +64,7 @@ class ResNet(nn.Module):
         out = self.relu(out)
         return out
 
-class MSHNet(nn.Module):
+class IRNet(nn.Module):
     def __init__(self, input_channels, block=ResNet):
         super().__init__()
         param_channels = [16, 32, 64, 128, 256]
@@ -73,7 +73,7 @@ class MSHNet(nn.Module):
         self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.up_4 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
         self.up_8 = nn.Upsample(scale_factor=8, mode='bilinear', align_corners=True)
-        self.up_16 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
+        self.up_16 = nn.Upsample(scale_factor=16, mode='bilinear', align_corners=True)
 
         self.conv_init = nn.Conv2d(input_channels, param_channels[0], 1, 1)
 

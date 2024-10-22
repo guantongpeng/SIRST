@@ -39,7 +39,7 @@ Licensed under the CC BY-NC-SA 4.0 license (https://creativecommons.org/licenses
 import torch.nn as nn
 import math
 import torch.utils.model_zoo as model_zoo
-import  model.ISNet.network.mynn as  mynn
+import  models.ISNet.network.mynn as  mynn
 
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
            'resnet152']

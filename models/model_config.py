@@ -11,12 +11,13 @@ from models.RDIAN import RDIAN
 from models.UNet import U_Net, R2U_Net, AttU_Net, R2AttU_Net, NestedUNet
 from models.EGEUNet import EGEUNet
 from models.EffisegNet import EffiSegNet
-# from models.ISNet.ISNet import ISNet
+from models.ISNet.ISNet import ISNet
 from models.MSHNet import MSHNet
+from models.IRNet import IRNet
 from models.MiM import MiM
 from mmcv.utils import Config
 # from models.RevCol.mmsegmentation.tools import revcol_seg
-from models.RevCol2 import revcol_seg
+# from models.RevCol2 import revcol_seg
 
 
 def model_chose(model_name, deep_supervision=True, num_classes=1, input_channels=1):
@@ -56,10 +57,9 @@ def model_chose(model_name, deep_supervision=True, num_classes=1, input_channels
                     nb_filter=[8, 16, 32, 64, 128])
         
 
-    # elif model == 'ISNet':
-    #     net = ISNet(layer_blocks=[4] * 3,
-    #                 channels=[8, 16, 32, 64],
-    #                 num_classes=num_classes)
+    elif model_name == 'ISNet':
+        net = ISNet(layer_blocks=[4] * 3,
+                    channels=[8, 16, 32, 64])
 
     elif model_name == 'UIUNet':
         net = UIUNET(input_channels=input_channels, 
@@ -96,18 +96,21 @@ def model_chose(model_name, deep_supervision=True, num_classes=1, input_channels
     elif model_name == 'MSHNet':
         net = MSHNet(input_channels=input_channels)
 
+    elif model_name == 'IRNet':
+        net = IRNet(input_channels=input_channels)
+        
     elif model_name == 'MiM':
         net = MiM([2]*3,[8, 16, 32, 64, 128])     
     
-    elif model_name == 'RevCol':
-        cfg = Config.fromfile('/home/guantp/Infrared/SIRST/models/RevCol/mmsegmentation/configs/revcol/test.py')
-        net = revcol_seg.get_model(cfg)
-    elif model_name == 'RevCol2':
-        channels = [64, 128, 256, 512]
-        layers = [2, 2, 4, 2]
-        num_subnet = 4
-        drop_path=0.1
-        net = revcol_seg.FullNet(channels, layers, num_subnet, num_classes=num_classes, drop_path = drop_path)   
+    # elif model_name == 'RevCol':
+    #     cfg = Config.fromfile('/home/guantp/Infrared/SIRST/models/RevCol/mmsegmentation/configs/revcol/test.py')
+    #     net = revcol_seg.get_model(cfg)
+    # elif model_name == 'RevCol2':
+    #     channels = [64, 128, 256, 512]
+    #     layers = [2, 2, 4, 2]
+    #     num_subnet = 4
+    #     drop_path=0.1
+    #     net = revcol_seg.FullNet(channels, layers, num_subnet, num_classes=num_classes, drop_path = drop_path)   
 
     else:
         raise UnboundLocalError(f"Error model name {model_name}!!!")
@@ -116,10 +119,7 @@ def model_chose(model_name, deep_supervision=True, num_classes=1, input_channels
 
 def run_model(net, model_name, input):
 
-    if model_name == 'ISNet':
-        outputs = net(input)
-        
-    elif model_name == 'RevCol2':
+    if model_name == 'RevCol2':
 
         outputs = net(input)[1]
         outputs = torch.sigmoid(outputs[-1])

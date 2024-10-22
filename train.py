@@ -51,13 +51,13 @@ class Trainer(object):
         self.net = self.net.to(self.device)
 
         # loss
-        if args.model_name == 'ISNet':
-            self._criterion = loss_chose('ISNetLoss')
-        elif args.model_name == 'SCTransNet':
+        if args.model_name == 'SCTransNet':
             self._criterion = loss_chose('BCELoss')
         else:
             self._criterion = loss_chose(args.loss_func)
         self.criterion = DPLoss(self._criterion, )
+        if args.model_name == 'ISNet':
+            self.criterion = loss_chose('ISNetLoss')
         self.loss_list = []
         self.epoch_loss = 0
                 
@@ -118,7 +118,7 @@ class Trainer(object):
         # self.scheduler = StepLR(self.optimizer, step_size=args.lr_step, gamma=0.1, last_epoch=-1)
 
         ########### save ############
-        self.model_path, self.parameter_path, self.save_path = generate_savepath(args, 0, 0)
+        self.model_path, self.parameter_path, self.save_path = generate_savepath(args, 0, 0, self._criterion)
         args_dict = vars(args)
         with open(f'{self.save_path}/args.json', 'w') as f:
             json.dump(args_dict, f, indent=4)
@@ -180,15 +180,16 @@ class Trainer(object):
         for i, (data, img_size, img_id) in enumerate(tbar):
             with torch.no_grad():
                 img, mask = Variable(data[0]).to(self.device), Variable(data[1]).cpu()
-                outputs = run_model(self.net, args.model_name, img)
-
-                if isinstance(outputs, list) or isinstance(outputs, tuple):
-                    outputs = outputs[0]
+                _outputs = run_model(self.net, args.model_name, img)
+                     
+                if isinstance(_outputs, list) or isinstance(_outputs, tuple):
+                    outputs = _outputs[0]
                 outputs = torch.squeeze(outputs, 2)
                 output = outputs.data.cpu()
-
-            loss = self.criterion(output, mask.float())
-            eval_losses.append(loss.item())
+                
+            if args.model_name != 'ISNet':                     
+                loss = self.criterion(output, mask.float())
+                eval_losses.append(loss.item())
             nIoU_metric.update(output, mask)
             ROC.update(output > args.threshold, mask)
             mIoU_metric.update((output > args.threshold), mask)
@@ -248,9 +249,9 @@ class Trainer(object):
                                                    
     def savemodel(self, epoch, val=False, IOU_part= None, eval_loss=None):
         if val:
-            self.model_path, self.parameter_path, self.save_path = generate_savepath(self.args, epoch, eval_loss, IOU_part)
+            self.model_path, self.parameter_path, self.save_path = generate_savepath(self.args, epoch, eval_loss, self._criterion, IOU_part)
         else:
-            self.model_path, self.parameter_path, self.save_path = generate_savepath(self.args, epoch, self.epoch_loss)
+            self.model_path, self.parameter_path, self.save_path = generate_savepath(self.args, epoch, self.epoch_loss, self._criterion)
         torch.save(self.net, self.model_path)
         # torch.save(self.net.state_dict(), self.parameter_path)
         print('save net OK in %s' % self.model_path)

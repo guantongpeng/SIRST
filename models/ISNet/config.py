@@ -47,7 +47,7 @@ import torch.nn as nn
 from torch.nn import init
 
 
-from model.ISNet.utils.AttrDict import AttrDict
+from models.ISNet.utils.AttrDict import AttrDict
 
 
 __C = AttrDict()

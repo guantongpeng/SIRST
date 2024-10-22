@@ -1,2 +1,0 @@
-/home/guantp/Infrared/SIRST/results/MWIRSTD_SCTransNet/16_202410160933_net_epoch_50_loss_0.0030_IoU-0.3997_nIoU-0.3465.pth
-ch:1000, eval loss:0.0057, mIoU:80.3085, nIoU:78.8115,  F1_score:89.0785, FA:52.9104, PD:88.3105

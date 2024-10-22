@@ -11,8 +11,8 @@ import numpy as np
 import time
 from utils1.lr_scheduler import adjust_learning_rate
 from utils1.dataset_IRSTD1K import SirstDataset
-from models.ISNet.ISNet import ISNet
-from loss import SoftIoULoss1, SoftIoULoss
+from ISNet import ISNet
+from loss import SoftLoULoss1, SoftLoULoss
 from metrics import SigmoidMetric, SamplewiseSigmoidMetric
 from torchvision import utils as vutils
 import torch.nn.functional as F
@@ -78,7 +78,7 @@ class Trainer(object):
             self.net = nn.DataParallel(self.net, device_ids=[0, 1]).cuda()
         self.net.to(device)
         ## criterion
-        self.criterion1 = SoftIoULoss1()
+        self.criterion1 = SoftLoULoss1()
         self.criterion2 = nn.BCELoss()
         self.bce = nn.BCELoss()
         ## optimizer
@@ -318,7 +318,6 @@ class Get_gradient_nopadding(nn.Module):
 
         x = torch.cat([x0, x1, x2], dim=1)
         return x
-
 class Get_gradientmask_nopadding(nn.Module):
     def __init__(self):
         super(Get_gradientmask_nopadding, self).__init__()

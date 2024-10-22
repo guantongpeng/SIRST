@@ -18,3 +18,5 @@ python train.py --dataset 'NUDT-SIRST' --model_name 'SCTransNet' --train 0 --tes
 
 dataset MWIRSTD  NUDT-SIRST
 model SCTransNet
+
+python train.py --dataset 'SIRST' --model_name 'MSHNet' --train 0 --test 1 --base_size 256 256 --crop_size 256 --save_pred_img True --pth_path /home/guantp/Infrared/SIRST/results/SIRST_MSHNet/models/16_202410182234_net_epoch_1000_loss_0.2041_IoU-0.7593_nIoU-0.7896.pth

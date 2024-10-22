@@ -265,13 +265,14 @@ class Get_gradient_nopadding(nn.Module):
                     [0, 0, 0]]
         kernel_h = torch.FloatTensor(kernel_h).unsqueeze(0).unsqueeze(0)
         kernel_v = torch.FloatTensor(kernel_v).unsqueeze(0).unsqueeze(0)
-        self.weight_h = nn.Parameter(data=kernel_h, requires_grad=False).cuda()
-        self.weight_v = nn.Parameter(data=kernel_v, requires_grad=False).cuda()
+        self.weight_h = nn.Parameter(data=kernel_h, requires_grad=False)
+        self.weight_v = nn.Parameter(data=kernel_v, requires_grad=False)
 
     def forward(self, x):
         x0 = x[:, 0]
-        x0_v = F.conv2d(x0.unsqueeze(1), self.weight_v, padding=1)
-        x0_h = F.conv2d(x0.unsqueeze(1), self.weight_h, padding=1)
+
+        x0_v = F.conv2d(x0[:,None,::], self.weight_v, padding=1)
+        x0_h = F.conv2d(x0[:,None,::], self.weight_h, padding=1)
 
         x0 = torch.sqrt(torch.pow(x0_v, 2) + torch.pow(x0_h, 2) + 1e-6)
 

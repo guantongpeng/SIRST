@@ -1,1 +1,0 @@
-./results/SIRST_RevCol2/16_202410170508_net_epoch_500_loss_0.0052.pth
