@@ -57,6 +57,7 @@ class Trainer(object):
             self._criterion = loss_chose(args.loss_func)
         self.criterion = DPLoss(self._criterion, )
         if args.model_name == 'ISNet':
+            self._criterion = 'ISNetLoss'
             self.criterion = loss_chose('ISNetLoss')
         self.loss_list = []
         self.epoch_loss = 0

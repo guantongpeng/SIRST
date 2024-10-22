@@ -1,12 +1,13 @@
-**支持数据集**
+## Single-frame Infrared Small Target Detction
+
+### Supported Datasets
 
 - SIRST
 - NUDT-SIRST
 - IRSTD-1k
-- MIRSDT
 - MWIRSTD
 
-**支持算法**
+### Supported Models
 
 - ACM
 - ACLNet
@@ -14,22 +15,25 @@
 - UIUNet
 - DNANet
 - SCTransNet
-- RevCol
+- RDIAN
+- EGEUNet
+- EffiSegNet
+- UNet Series
+- ...
 
-**单GPU训练**
+### Train And Test
+
+**Train Code Example**
 ```shell
-torchrun --nproc_per_node=1 train.py --datapath '../datasets/' --dataset 'NUDT-MIRSDT' --model 'SCTransNet' --loss_func 'fullySup1' --train 1 --test 0 --fullySupervised True --deep_supervision False --batchsize 16 --epochs 10 --lr 0.0001 
+CUDA_VISIBLE_DEVICES=0 python train.py --dataset 'SIRST' --model_name 'SCTransNet' --train 0 --test 1 --base_size 256 256 --crop_size 256 --save_pred_img True --pth_path  
 ```
-**单机多卡GPU训练**
+**Test Code Example**
 ```shell
-torchrun --nproc_per_node=4 train.py --datapath '../datasets/' --dataset 'NUDT-MIRSDT' --model 'SCTransNet' --loss_func 'fullySup1' --train 1 --test 0 --fullySupervised True --SpatialDeepSu
-p False --batchsize 16 --epochs 10 --lr 0.0001 --DataParallel True
+python train.py --dataset 'SIRST' --model_name 'SCTransNet' --train 0 --test 1 --base_size 256 256 --crop_size 256 --save_pred_img  True --pth_path your_pth_path
 ```
-**多机多卡GPU训练**
-```shell
-torchrun --nnodes=1 --nproc_per_node=4 --node_rank=0 train.py --datapath '../datasets/' --dataset 'NUDT-MIRSDT' --model 'SCTransNet' --loss_func 'fullySup1' --train 1 --test 0 --fullySupervised True --deep_supervision False --batchsize 16 --epochs 10 --lr 0.0001 --DataParallel True
-```
-根据实际情况修改nnodes和node_rank参数
+
+For the SIRST and NUDT-SIRST datasets, it is recommended to employ the parameters `--base_size 256 256 --crop_size 256`. Conversely, for the IRSTD-1k dataset, the suggested parameters are `--base_size 512 512 --crop_size 512`.
+
 ### References
 I sincerely appreciate the following outstanding work and code !
 
