@@ -25,7 +25,7 @@
 
 **Train Code Example**
 ```shell
-CUDA_VISIBLE_DEVICES=0 python train.py --dataset 'SIRST' --model_name 'SCTransNet' --train 0 --test 1 --base_size 256 256 --crop_size 256 --save_pred_img True --pth_path  
+CUDA_VISIBLE_DEVICES=2,3 python train.py --dataset 'SIRST' --model_name 'SCTransNet' --train 1 --test 0 --deep_supervision True --batchsize 16 --epochs 1000 --lr 0.01 --base_size 256 256 --crop_size 256 --optimizer_name 'Adam' --test_epoch 50
 ```
 **Test Code Example**
 ```shell
