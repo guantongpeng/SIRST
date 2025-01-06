@@ -58,22 +58,22 @@ class ResNet(nn.Module):
         out = self.relu(out)
         out = self.conv2(out)
         out = self.bn2(out)
-        out = self.ca(out) * out
-        out = self.sa(out) * out
+        # out = self.ca(out) * out
+        # out = self.sa(out) * out
         out += residual
         out = self.relu(out)
         return out
 
-class IRNet(nn.Module):
-    def __init__(self, input_channels, block=ResNet):
+class Net3883(nn.Module):
+    def __init__(self, input_channels, block=ResNet, deep_supervision=True):
         super().__init__()
-        param_channels = [16, 32, 64, 128, 256]
+        param_channels = [32, 64, 128, 256, 512]
         param_blocks = [2, 2, 2, 2]
         self.pool = nn.MaxPool2d(2, 2)
         self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
         self.up_4 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
         self.up_8 = nn.Upsample(scale_factor=8, mode='bilinear', align_corners=True)
-        self.up_16 = nn.Upsample(scale_factor=16, mode='bilinear', align_corners=True)
+        self.up_16 = nn.Upsample(scale_factor=4, mode='bilinear', align_corners=True)
 
         self.conv_init = nn.Conv2d(input_channels, param_channels[0], 1, 1)
 
@@ -95,7 +95,7 @@ class IRNet(nn.Module):
         self.output_3 = nn.Conv2d(param_channels[3], 1, 1)
 
         self.final = nn.Conv2d(4, 1, 3, 1, 1)
-
+        self.deep_supervision = deep_supervision
 
     def _make_layer(self, in_channels, out_channels, block, block_num=1):
         layer = []        
@@ -104,7 +104,7 @@ class IRNet(nn.Module):
             layer.append(block(out_channels, out_channels))
         return nn.Sequential(*layer)
 
-    def forward(self, x, warm_flag=None):
+    def forward(self, x):
         x_e0 = self.encoder_0(self.conv_init(x))
         x_e1 = self.encoder_1(self.pool(x_e0))
         x_e2 = self.encoder_2(self.pool(x_e1))
@@ -118,17 +118,15 @@ class IRNet(nn.Module):
         x_d0 = self.decoder_0(torch.cat([x_e0, self.up(x_d1)], 1))
 
         
-        if warm_flag:
+        if self.deep_supervision:
             mask0 = self.output_0(x_d0)
             mask1 = self.output_1(x_d1)
             mask2 = self.output_2(x_d2)
             mask3 = self.output_3(x_d3)
-            output = self.final(torch.cat([mask0, self.up(mask1), self.up_4(mask2), self.up_8(mask3)], dim=1))
-            return output,mask0, mask1, mask2, mask3
+            output =  self.final(torch.cat([mask0, self.up(mask1), self.up_4(mask2), self.up_8(mask3)], dim=1))
+            return output
+            # return output, mask0, self.up(mask1), self.up_4(mask2), self.up_8(mask3)
     
         else:
             output = self.output_0(x_d0)
             return output
-
-       
-    

@@ -10,9 +10,10 @@ class SIRST_Dataset(Dataset):
     """Iceberg Segmentation dataset."""
     NUM_CLASS = 1
 
-    def __init__(self, dataset_dir, spilt_txt, dataset_name, train, base_size, crop_size, suffix='.png', img_norm_cfg=None):
+    def __init__(self, dataset_dir, spilt_txt, dataset_name, train, base_size, crop_size, suffix='.png', img_norm_cfg=None, test=False):
         super(SIRST_Dataset, self).__init__()
         self.train = train
+        self.test = test
         train_img_ids, val_img_ids = load_dataset(spilt_txt)
         self._items = train_img_ids if train else val_img_ids
         self.masks = dataset_dir+'/'+'masks'
@@ -82,8 +83,8 @@ class SIRST_Dataset(Dataset):
 
         img = Image.open(img_path).convert('I') 
         mask = Image.open(label_path)
-
-        img = Normalized(np.array(img, dtype=np.float32), self.img_norm_cfg)
+        img_ori = np.array(img, dtype=np.float32)
+        img = Normalized(img_ori, self.img_norm_cfg)
         mask = np.array(mask, dtype=np.float32) / 255.0
         # synchronized transform
         # img = Image.fromarray(img, mode='RGB') # 会格式化到0-255，导致出现问题
@@ -102,6 +103,8 @@ class SIRST_Dataset(Dataset):
             img_size = img.shape # 这一行放在后面会降低FA
             img = PadImg(img)
             mask = PadImg(mask)
+            if self.test:
+                img_ori = PadImg(img_ori)
 
         img, mask = img[np.newaxis, :], mask[np.newaxis, :]
         img = torch.from_numpy(np.ascontiguousarray(img))
@@ -109,6 +112,9 @@ class SIRST_Dataset(Dataset):
 
         if self.train:
             return img, mask
+        if self.test:
+            img_ori = torch.from_numpy(np.ascontiguousarray(img_ori[np.newaxis, :]))
+            return (img, mask), img_ori, img_id
         
         return (img, mask), img_size, img_id
 

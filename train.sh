@@ -10,7 +10,8 @@ DATASET_GPU_MAP[IRSTD-1k]=2
 DATASETS=('SIRST' 'NUDT-SIRST' 'IRSTD-1k')
 
 # Model names to test
-MODELS=('ACM' 'ALCNet' 'DNANet' 'UIUNet' 'SCTransNet' 'ISNet' 'MSHNet' 'RDIAN' 'ResUNet' 'UNet' 'NestedUNet' 'EffiSegNet')
+# MODELS=('ACM' 'ALCNet' 'DNANet' 'UIUNet' 'SCTransNet' 'ISNet' 'MSHNet' 'RDIAN' 'ResUNet' 'UNet' 'NestedUNet' 'EffiSegNet')
+MODELS=('TFDNANet' 'TFNet')
 
 # Training parameters
 BATCHSIZE=16

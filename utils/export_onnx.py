@@ -37,13 +37,16 @@ def parse_args():
 if __name__ == '__main__':
     
     args = parse_args()
-            
-    net = model_chose(args.model_name, False)
-    net = load_model(net, args.pth_path)
-    net.eval()
+
     w, h = args.img_size
     x = torch.randn(1, 1, w, h).cuda()
-    out = net(x)
+    
+    net = model_chose(args.model_name, deep_supervision=False, h=h, w=w)
+    net = load_model(net, args.pth_path)
+    net.eval()
+    with torch.no_grad():
+        out = net(x)
+        
     model_path = args.pth_path.replace(".pth", ".onnx")
     if isinstance(net, torch.nn.DataParallel):
         net = net.module

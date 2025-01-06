@@ -2,69 +2,61 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class ChannelAttention(nn.Module):
-    def __init__(self, in_planes, ratio=16):
-        super(ChannelAttention, self).__init__()
-        self.avg_pool = nn.AdaptiveAvgPool2d(1)
-        self.max_pool = nn.AdaptiveMaxPool2d(1)
-        self.fc1   = nn.Conv2d(in_planes, in_planes // ratio, 1, bias=False)
-        self.relu1 = nn.ReLU()
-        self.fc2   = nn.Conv2d(in_planes // ratio, in_planes, 1, bias=False)
-        self.sigmoid = nn.Sigmoid()
-    def forward(self, x):
-        avg_out = self.fc2(self.relu1(self.fc1(self.avg_pool(x))))
-        max_out = self.fc2(self.relu1(self.fc1(self.max_pool(x))))
-        out = avg_out + max_out
-        return self.sigmoid(out)
 
-class SpatialAttention(nn.Module):
-    def __init__(self, kernel_size=7):
-        super(SpatialAttention, self).__init__()
-        assert kernel_size in (3, 7), 'kernel size must be 3 or 7'
-        padding = 3 if kernel_size == 7 else 1
-        self.conv1 = nn.Conv2d(2, 1, kernel_size, padding=padding, bias=False)
-        self.sigmoid = nn.Sigmoid()
-    def forward(self, x):
-        avg_out = torch.mean(x, dim=1, keepdim=True)
-        max_out, _ = torch.max(x, dim=1, keepdim=True)
-        x = torch.cat([avg_out, max_out], dim=1)
-        x = self.conv1(x)
-        return self.sigmoid(x)
 
+class GlobalFilter(nn.Module):
+    def __init__(self, dim, h=14, w=8):
+        super().__init__()
+        # self.complex_weight = nn.Parameter(torch.randn(h, w, dim, 2, dtype=torch.float32) * 0.02)
+
+        self.repeat_num = 4
+        self.merge = nn.Conv2d(dim * 4, dim, 1, bias=False)
+
+    def forward(self, x):
+        B, C, H, W  = x.shape
+        x = torch.fft.rfft2(x, dim=(2, 3), norm='ortho')
+        weight = torch.view_as_complex(torch.randn(self.repeat_num, 1, C, H, int(W/2+1), 2, dtype=torch.float32) * 0.02).repeat(1,B,1,1,1).cuda()
+        
+        x = x * weight
+
+        x = torch.fft.irfft2(x, s=(H, W), dim=(3, 4), norm='ortho')
+        
+        x = self.merge(torch.cat([x[i] for i in range(self.repeat_num)], dim=1))
+        
+        return x
+    
 class ResNet(nn.Module):
     def __init__(self, in_channels, out_channels, stride = 1):
         super(ResNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size = 3, stride = stride, padding = 1)
-        self.bn1 = nn.BatchNorm2d(out_channels)
-        self.relu = nn.ReLU(inplace = True)
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size = 3, padding = 1)
-        self.bn2 = nn.BatchNorm2d(out_channels)
+        
+        self.globalfilter = GlobalFilter(in_channels)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(inplace = True)        
         if stride != 1 or out_channels != in_channels:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_channels, out_channels, kernel_size = 1, stride = stride),
                 nn.BatchNorm2d(out_channels))
         else:
             self.shortcut = None
+        self.merge = nn.Sequential(
+                nn.Conv2d(in_channels, out_channels, kernel_size = 1, stride = stride),
+                nn.BatchNorm2d(out_channels))
+        
 
-        self.ca = ChannelAttention(out_channels)
-        self.sa = SpatialAttention()
 
     def forward(self, x):
         residual = x
+
+        out = self.globalfilter(x)
+        out = self.merge(out)
         if self.shortcut is not None:
             residual = self.shortcut(x)
-        out = self.conv1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-        out = self.conv2(out)
-        out = self.bn2(out)
-        out = self.ca(out) * out
-        out = self.sa(out) * out
+            
         out += residual
-        out = self.relu(out)
+        out = self.bn(out)
         return out
 
-class MSHNet(nn.Module):
+class TFNet(nn.Module):
     def __init__(self, input_channels, block=ResNet, deep_supervision=True):
         super().__init__()
         param_channels = [16, 32, 64, 128, 256]
@@ -123,10 +115,13 @@ class MSHNet(nn.Module):
             mask1 = self.output_1(x_d1)
             mask2 = self.output_2(x_d2)
             mask3 = self.output_3(x_d3)
-            output =  self.final(torch.cat([mask0, self.up(mask1), self.up_4(mask2), self.up_8(mask3)], dim=1))
+            output = self.final(torch.cat([mask0, self.up(mask1), self.up_4(mask2), self.up_8(mask3)], dim=1))
             return output
-            # return output, mask0, self.up(mask1), self.up_4(mask2), self.up_8(mask3)
+            # return mask0, self.up(mask1), self.up_4(mask2), self.up_8(mask3)
     
         else:
             output = self.output_0(x_d0)
             return output
+
+       
+    

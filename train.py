@@ -43,10 +43,17 @@ class Trainer(object):
             os.mkdir(self.save_folder)
             
         # model
-        self.net = model_chose(args.model_name, args.deep_supervision)
-        self.device = torch.device('cuda')
-        print('use '+str(torch.cuda.device_count())+' gpus')
+        if args.dataset == 'IRSTD-1k':
+            image_size = (512, 512)
+        elif args.dataset in ['SIRST', 'NUDT-SIRST']:
+            image_size = (256, 256)
+        else:
+            raise
+        
+        self.net = model_chose(args.model_name, args.deep_supervision, h=image_size[0], w=image_size[1])
         self.net.apply(weights_init_kaiming)
+        self.device = torch.device('cuda')
+        print('use '+str(torch.cuda.device_count())+' gpus')     
         self.net = nn.DataParallel(self.net)          
         self.net = self.net.to(self.device)
 
@@ -81,11 +88,16 @@ class Trainer(object):
         #     self.val_dataset = IRSTD_1K_Dataset(self.test_path, train=False)
         #     self.val_loader = DataLoader(self.val_dataset, batch_size=1, shuffle=False)
         elif args.dataset in ['SIRST', 'NUDT-SIRST', 'IRSTD-1k']:
+            base_size = image_size
+            crop_size = image_size[0]
             spilt_txt = './datasets/split_datasets/' + args.dataset
-            self.train_dataset = SIRST_Dataset(train_path, spilt_txt, dataset_name=args.dataset, train=True, base_size=args.base_size,crop_size=args.crop_size,)
+            self.train_dataset = SIRST_Dataset(train_path, spilt_txt, dataset_name=args.dataset, train=True, base_size=base_size,crop_size=crop_size,)
             # self.train_loader = DataLoader(self.train_dataset, batch_size=args.batchsize, shuffle=True, drop_last=True)
             self.train_loader = DataLoader(self.train_dataset, batch_size=args.batchsize, shuffle=True)
-            self.val_dataset = SIRST_Dataset(self.test_path, spilt_txt, dataset_name=args.dataset, train=False, base_size=args.base_size,crop_size=args.crop_size,)
+            self.val_dataset = SIRST_Dataset(self.test_path, spilt_txt, dataset_name=args.dataset, train=False, base_size=base_size,crop_size=crop_size,)
+            self.val_loader = DataLoader(self.val_dataset, batch_size=1, shuffle=False)
+        elif args.dataset == 'TestData':
+            self.val_dataset = SIRST_Dataset(self.test_path, dataset_name=args.dataset, train=False, base_size=args.base_size,crop_size=args.crop_size,)
             self.val_loader = DataLoader(self.val_dataset, batch_size=1, shuffle=False)
         else:
             raise BaseException(f'Error dataset name {args.dataset}, support datasets ["NUDT-MIRSDT", "MWIRSTD", "IRSTD-1k", "SIRST", "NUDT-SIRST"]')
@@ -169,83 +181,116 @@ class Trainer(object):
 
     def validation(self, epoch, test=False):
         args = self.args
-        self.net.eval()
+        self.net.eval()  # 切换到评估模式
         eval_losses = []
         
-        ROC  = ROCMetric05(nclass=1, bins=10)
+        # 初始化评估指标
+        ROC = ROCMetric05(nclass=1, bins=10)
         mIoU_metric = mIOU()
         pd_fa = PD_FA()
         nIoU_metric = SamplewiseSigmoidMetric(nclass=1, score_thresh=0.5)
         
-        tbar = tqdm(self.val_loader)
+        tbar = tqdm(self.val_loader, desc="Validation Progress")
         for i, (data, img_size, img_id) in enumerate(tbar):
             with torch.no_grad():
-                img, mask = Variable(data[0]).to(self.device), Variable(data[1]).cpu()
-                _outputs = run_model(self.net, args.model_name, img)
-                     
-                if isinstance(_outputs, list) or isinstance(_outputs, tuple):
-                    outputs = _outputs[0]
-                outputs = torch.squeeze(outputs, 2)
-                output = outputs.data.cpu()
+                img, mask = data[0].to(self.device), data[1].to(self.device)
+                outputs = run_model(self.net, args.model_name, img)
                 
-            if args.model_name != 'ISNet':                     
+                # 如果输出为列表或元组，取第一个
+                if isinstance(outputs, (list, tuple)):
+                    outputs = outputs[0]
+                
+                # 确保输出维度正确
+                output = torch.squeeze(outputs, 2)
+                # output = outputs.cpu()
+                # import pdb
+                # pdb.set_trace()
+            # 如果模型不是 ISNet，则计算损失
+            if args.model_name != 'ISNet':
                 loss = self.criterion(output, mask.float())
                 eval_losses.append(loss.item())
+
+            # 更新各类评估指标
+            threshold_output = output > args.threshold
             nIoU_metric.update(output, mask)
-            ROC.update(output > args.threshold, mask)
-            mIoU_metric.update((output > args.threshold), mask)
-            pd_fa.update((output[0, 0, :, :] > args.threshold), mask[0, 0, :, :], img_size)
-            temp = nIoU_metric.get()
-            tbar.set_description(f'{temp}')
+            ROC.update(threshold_output, mask)
+            mIoU_metric.update(threshold_output, mask)
+            pd_fa.update(threshold_output[0, 0], mask[0, 0], img_size)
+
+            # 更新进度条显示当前 nIoU
+            temp_nIoU = nIoU_metric.get()
+            tbar.set_description(f"nIoU: {temp_nIoU:.4f}")
+            
+            # 保存预测图片
             if args.save_pred_img:
-                save_pred_imgs((output > args.threshold).to(torch.float), mask.to(torch.float), self.save_path, img_id)
-                # save_pred_imgs(output, mask, self.save_path, img_id)
-                                    
+                save_pred_imgs(threshold_output.float(), mask.float(), self.save_path, img_id)
+        
+        # 计算最终的指标
         PD, FA = pd_fa.get()
         _, mIoU = mIoU_metric.get()
         nIoU = nIoU_metric.get()
         F1_score = ROC.get()[-1]
         eval_loss = np.mean(eval_losses)
 
-        IOU_part = f'_IoU-{mIoU:.4f}_nIoU-{nIoU:.4f}'
-        is_best_iou = mIoU > self.best_iou
-        is_best_niou = nIoU > self.best_nIoU
+        # 生成日志信息
+        msg = (
+            f"Epoch:{epoch}, eval loss:{eval_loss:.4f}, "
+            f"mIoU:{mIoU * 1e2:.4f}, nIoU:{nIoU * 1e2:.4f}, "
+            f"F1_score:{F1_score * 1e2:.4f}, FA:{FA * 1e6:.4f}, PD:{PD * 1e2:.4f}\n"
+        )
+        tbar.set_description(msg)
+
+        # 更新日志和保存模型
         if not test:
-            # if  is_best_iou and is_best_niou:
-            #     delete_pth_files(args.result_path + args.dataset  + '_' + args.model_name + '/')
-            if  is_best_iou or is_best_niou:
-                self.savemodel(epoch, True, IOU_part, eval_loss)  
-                self.best_iou = max(mIoU, self.best_iou)
-                self.best_nIoU = max(nIoU, self.best_nIoU)
-                
-            self.writer.add_scalar('Losses/eval_loss', np.mean(eval_losses), epoch)
-            self.writer.add_scalar('Eval/IoU', mIoU, epoch)
-            self.writer.add_scalar('Eval/nIoU', nIoU, epoch)
-            self.writer.add_scalar('Best/IoU', self.best_iou, epoch)
-            self.writer.add_scalar('Best/nIoU', self.best_nIoU, epoch)
-            self.writer.add_scalar('Best/FA', self.best_FA, epoch)
-            self.writer.add_scalar('Best/PD', self.best_PD, epoch)
-                    
+            if self._should_save_model(mIoU, nIoU):
+                self.savemodel(epoch, True, f'_IoU-{mIoU:.4f}_nIoU-{nIoU:.4f}', eval_loss)
+            self._update_best_metrics(mIoU, nIoU, FA, PD)
+            self._log_to_writer(epoch, eval_loss, mIoU, nIoU)
+
+
+        # 打印日志信息
+        print('loss', eval_loss)                
+        print('mIoU', mIoU * 1e2)
+        print('nIoU', nIoU * 1e2)
+        print('F1_score', F1_score * 1e2)
+        print('Fa', FA * 1e6)
+        print('Pd', PD * 1e2)
+
+        # 写入日志文件
+        self._write_to_log(msg)
+
+    def _update_best_metrics(self, mIoU, nIoU, FA, PD):
+        """更新最佳指标"""
+        self.best_iou = max(mIoU, self.best_iou)
+        self.best_nIoU = max(nIoU, self.best_nIoU)
         if FA < self.best_FA:
             self.best_FA = FA
         if PD > self.best_PD:
-            self.best_PD = PD     
+            self.best_PD = PD
 
-        _mIoU, _nIoU, _F1_score, _FA, _PD = mIoU * 1e2, nIoU * 1e2, F1_score * 1e2, FA * 1e6, PD * 1e2
-        msg = f'Epoch:{epoch}, eval loss:{eval_loss:.4f}, mIoU:{_mIoU:.4f}, nIoU:{_nIoU:.4f},  F1_score:{_F1_score:.4f}, FA:{_FA:.4f}, PD:{_PD:.4f}\n'
-        tbar.set_description(msg)
-        
-        print('loss', eval_loss)                
-        print('mIoU', _mIoU)
-        print('nIoU', _nIoU)
-        print('F1_score', _F1_score)
-        print('Fa', _FA)
-        print('Pd', _PD)
+    def _log_to_writer(self, epoch, eval_loss, mIoU, nIoU):
+        """将指标写入 TensorBoard"""
+        self.writer.add_scalar('Losses/eval_loss', eval_loss, epoch)
+        self.writer.add_scalar('Eval/IoU', mIoU, epoch)
+        self.writer.add_scalar('Eval/nIoU', nIoU, epoch)
+        self.writer.add_scalar('Best/IoU', self.best_iou, epoch)
+        self.writer.add_scalar('Best/nIoU', self.best_nIoU, epoch)
+        self.writer.add_scalar('Best/FA', self.best_FA, epoch)
+        self.writer.add_scalar('Best/PD', self.best_PD, epoch)
 
+    def _should_save_model(self, mIoU, nIoU):
+        """判断是否保存模型"""
+        return mIoU > self.best_iou or nIoU > self.best_nIoU
+
+    def _write_to_log(self, msg):
+        """将信息写入日志文件"""
         try:
-            self.test_log_file.write(msg)
-        except:
-            self.log_file.write(msg)
+            if hasattr(self, 'test_log_file'):
+                self.test_log_file.write(msg)
+            else:
+                self.log_file.write(msg)
+        except Exception as e:
+            print(f"Error writing to log file: {e}")
 
                                                    
     def savemodel(self, epoch, val=False, IOU_part= None, eval_loss=None):

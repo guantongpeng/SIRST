@@ -1,9 +1,9 @@
 import torch
-from models.DNANet import DNANet
 from models.ResUNet import ResUNet
 from models.ACM import ASKCResUNet as ACM
 from models.ALCNet import ASKCResNetFPN as ALCNet
-from models.DNANet import Res_CBAM_block
+from models.DNANet import Res_CBAM_block, DNANet
+from models.TFDNANet import TFRes_CBAM_block, TFDNANet
 from models.ResUNet import Res_block
 from models.UIUNet.uiunet import UIUNET
 from models.SCTransNet import SCTransNet
@@ -13,14 +13,16 @@ from models.EGEUNet import EGEUNet
 from models.EffisegNet import EffiSegNet
 from models.ISNet.ISNet import ISNet
 from models.MSHNet import MSHNet
-from models.IRNet import IRNet
+from models.TFMSHNet import TFMSHNet
+from models.TFNet import TFNet
 from models.MiM import MiM
+from models.Net3883 import Net3883
 from mmcv.utils import Config
 # from models.RevCol.mmsegmentation.tools import revcol_seg
 # from models.RevCol2 import revcol_seg
 
 
-def model_chose(model_name, deep_supervision=True, num_classes=1, input_channels=1):
+def model_chose(model_name, deep_supervision=True, num_classes=1, input_channels=1, h=512, w=512):
 
     if model_name == 'ACM':
         net = ACM(in_channels=input_channels,
@@ -45,6 +47,14 @@ def model_chose(model_name, deep_supervision=True, num_classes=1, input_channels
         net = DNANet(num_classes=num_classes,
                     input_channels=input_channels,
                     block=Res_CBAM_block,
+                    num_blocks=[2, 2, 2, 2],
+                    nb_filter=[16, 32, 64, 128, 256],
+                    deep_supervision=deep_supervision)
+
+    elif model_name == 'TFDNANet':
+        net = TFDNANet(num_classes=num_classes,
+                    input_channels=input_channels,
+                    block=TFRes_CBAM_block,
                     num_blocks=[2, 2, 2, 2],
                     nb_filter=[16, 32, 64, 128, 256],
                     deep_supervision=deep_supervision)
@@ -94,10 +104,16 @@ def model_chose(model_name, deep_supervision=True, num_classes=1, input_channels
         net = RDIAN()    
                     
     elif model_name == 'MSHNet':
-        net = MSHNet(input_channels=input_channels)
+        net = MSHNet(input_channels=input_channels, deep_supervision= deep_supervision)
 
-    elif model_name == 'IRNet':
-        net = IRNet(input_channels=input_channels)
+    elif model_name == 'Net3883':
+        net = Net3883(input_channels=input_channels, deep_supervision= deep_supervision)
+        
+    elif model_name == 'TFMSHNet':
+        net = TFMSHNet(input_channels=input_channels, deep_supervision= deep_supervision, h=h, w=w)
+
+    elif model_name == 'TFNet':
+        net = TFNet(input_channels=input_channels, deep_supervision= deep_supervision)
         
     elif model_name == 'MiM':
         net = MiM([2]*3,[8, 16, 32, 64, 128])     

@@ -12,7 +12,7 @@ parser = argparse.ArgumentParser(description="PyTorch BasicIRSTD Parameter and F
 # parser.add_argument("--model_names", default=['ACM', 'ALCNet', 'DNANet', 'ISNet', 'RISTDnet', 'UIUNet', 'U-Net', 'RDIAN', 'ISTDU-Net'], nargs='+', 
 #                     help="model_name: 'ACM', 'ALCNet', 'DNANet', 'ISNet', 'RISTDnet', 'UIUNet', 'U-Net', 'RDIAN', 'ISTDU-Net'")
 
-parser.add_argument("--model_names", default=['ACM', 'ALCNet', 'DNANet', 'UIUNet', 'SCTransNet', 'EGEUNet', 'ResUNet', 'UNet', 'R2AttUNet', 'NestedUNet', 'EffiSegNet', 'MiM', 'MSHNet', 'RDIAN', 'RevCol2'], nargs='+', 
+parser.add_argument("--model_names", default=["TFDNANet", "TFMSHNet", 'ACM', 'ALCNet', 'DNANet', 'UIUNet', 'ISNet', 'SCTransNet',  'MSHNet', 'RDIAN','EGEUNet', 'ResUNet', 'UNet', 'R2AttUNet', 'NestedUNet', 'EffiSegNet', 'MiM', ], nargs='+', 
                     help="model_name: 'ACM', 'ALCNet', 'DNANet', 'ISNet', 'RISTDnet', 'UIUNet', 'U-Net', 'RDIAN', 'ISTDU-Net'")
 
 global opt
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     opt.f = open('../Params_FLOPs.txt', 'w')
     input_img = torch.rand(1, 1, 256, 256).cuda()
     for model_name in opt.model_names:
-        net = model_chose(model_name, deep_supervision=False).cuda()    
+        net = model_chose(model_name, deep_supervision=False, h=input_img[-2], w=input_img[-1]).cuda()    
         flops, params = profile(net, inputs=(input_img, ))
         print(model_name)
         print('Params: %2fM' % (params / 1e6))

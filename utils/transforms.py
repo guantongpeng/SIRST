@@ -7,6 +7,7 @@ from PIL import Image
 from scipy.ndimage import zoom
 import os
 
+
 class Compose(object):
     def __init__(self, transforms):
         self.transforms = transforms
@@ -142,19 +143,9 @@ def PadImg(img, times=32):
         img = np.pad(img, ((0, 0), (0, (w // times + 1) * times - w)), mode='constant')
     return img
 
-from scipy.ndimage import zoom
+
 
 def resize_mask_to_img(mask, img_shape):
-    """
-    Resize the mask to the shape of the image using scipy.ndimage.zoom.
-    
-    Parameters:
-    - mask: 2D numpy array, the mask to be resized.
-    - img_shape: tuple or list, the shape of the image (height, width).
-    
-    Returns:
-    - resized_mask: 2D numpy array, the mask resized to the image shape.
-    """
     # Calculate the zoom factors
     zoom_factors = (img_shape[0] / mask.shape[0], img_shape[1] / mask.shape[1])
     
@@ -178,6 +169,28 @@ def get_img_norm_cfg(dataset_name, dataset_dir):
         img_norm_cfg = dict(mean=81.86100769042969, std=37.245872497558594)        
     elif dataset_name == 'IRDST-real':
         img_norm_cfg = {'mean': 101.54053497314453, 'std': 56.49856185913086}
+        
+    elif dataset_name == 'TestData':
+        def get_all_images_in_folder(folder_path):
+            valid_extensions = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tiff', '.webp')
+            files = os.listdir(folder_path)
+            image_files = [file for file in files if file.lower().endswith(valid_extensions)]
+            return image_files
+
+        img_list = get_all_images_in_folder(dataset_dir)
+        mean_list = []
+        std_list = []
+                    
+        for img_pth in img_list:
+            img = Image.open(dataset_dir+ img_pth).convert('I')
+            img = np.array(img, dtype=np.float32)
+            mean_list.append(img.mean())
+            std_list.append(img.std())
+        _mean = float(np.array(mean_list).mean())
+        _std = float(np.array(std_list).mean())
+        print(_mean, _std)
+        img_norm_cfg = dict(mean=_mean, std=_std)
+
     else:
         with open(dataset_dir + '/' + dataset_name + '/train.txt', 'r') as f:
             train_list = f.read().splitlines()

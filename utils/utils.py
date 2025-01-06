@@ -155,14 +155,15 @@ def generate_savepath(args, epoch, epoch_loss, loss, IOU_part=''):
     timestamp = time.time()
     cur_time = time.strftime("%Y%m%d%H%M", time.localtime(timestamp))
 
-    save_path = args.result_path + args.dataset  + '_' + args.model_name + '_'+ str(loss).split('()')[0] + '/models/'
-    model_path = save_path + f'{args.batchsize}' + '_' + cur_time + '_net_epoch_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
-    parameter_path = save_path + f'{args.batchsize}' + '_' + cur_time + '_net_para_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
+    save_path = args.result_path + args.dataset  + '_' + args.model_name + '_'+ str(loss).split('()')[0] + '/'
+    model_save_path = save_path + 'models/'
+    model_path = model_save_path  + f'{args.batchsize}' + '_' + cur_time + '_net_epoch_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
+    parameter_path = model_save_path + f'{args.batchsize}' + '_' + cur_time + '_net_para_' + str(epoch) + '_loss_' + f"{epoch_loss:.4f}" + IOU_part + '.pth'
 
     if not os.path.exists(args.result_path):
         os.makedirs(args.result_path, exist_ok=True)
-    if not os.path.exists(save_path):
-        os.makedirs(save_path, exist_ok=True)
+    if not os.path.exists(model_save_path):
+        os.makedirs(model_save_path, exist_ok=True)
 
     return model_path, parameter_path, save_path
 
@@ -207,3 +208,94 @@ def save_pred_imgs(output, mask, save_path, img_id):
     if not os.path.exists(mixed_imgs_path):
         os.makedirs(mixed_imgs_path)
     mixed_img.save(mixed_imgs_path + '/' + img_id[0] + '_mix.png')
+    
+# def save_test_pred_imgs(output, mask, save_path, img_id):
+
+#     output = (output[0, 0, :, :] * 255).int()
+#     mask = mask[0, 0, :, :].int()
+#     import pdb
+#     # pdb.set_trace()
+
+#     pred_img = ToPILImage()(output).convert('L')
+#     pred_imgs_path = save_path + '/' + 'pred_imgs'
+#     if not os.path.exists(pred_imgs_path):
+#         os.makedirs(pred_imgs_path)
+#     pred_img.save(pred_imgs_path + '/' + img_id[0] + '.png')
+    
+#     img_width, img_height = pred_img.size
+#     mixed_img = Image.new('L', (img_width * 3 + 2 * 6, img_height + 2 * 2 + 20))
+#     draw = ImageDraw.Draw(mixed_img)
+#     border_width = 2
+#     font = ImageFont.load_default()
+#     text_height = 20
+
+#     label_img = ToPILImage()(mask).convert('L')
+#     diff_img = ToPILImage()(np.abs(output - mask)).convert('L')
+#     label_text = "Label"
+#     pred_text = "Prediction"
+#     diff_text = "Difference"
+#     mixed_img.paste(label_img, (border_width, text_height + border_width))
+#     draw.text((border_width, border_width // 2), label_text, font=font, fill=255)
+#     draw.rectangle([(border_width, border_width), (img_width + border_width, img_height + border_width + text_height)], outline=255)
+#     mixed_img.paste(pred_img, (img_width + border_width * 5, text_height + border_width))
+#     draw.text((img_width + border_width * 3, border_width // 2), pred_text, font=font, fill=255)
+#     draw.rectangle([(img_width + border_width * 3, border_width), (img_width * 2 + border_width * 3, img_height + border_width + text_height)], outline=255)
+#     mixed_img.paste(diff_img, (img_width * 2 + border_width * 7, text_height + border_width))
+#     draw.text((img_width * 2 + border_width * 5, border_width // 2), diff_text, font=font, fill=255)
+#     draw.rectangle([(img_width * 2 + border_width * 5, border_width), (img_width * 3 + border_width * 5, img_height + border_width + text_height)], outline=255)
+#     mixed_imgs_path = save_path + '/' + 'mix_imgs'
+#     if not os.path.exists(mixed_imgs_path):
+#         os.makedirs(mixed_imgs_path)
+#     mixed_img.save(mixed_imgs_path + '/' + img_id[0] + '_mix.png')
+
+def save_test_pred_imgs(origin_img, output, mask, save_path, img_id):
+
+    output = (output[0, 0, :, :] * 255).int()
+    mask = (mask[0, 0, :, :] * 255).int()
+
+    pred_img = ToPILImage()(output).convert('L')
+    origin_img = ToPILImage()(255 - origin_img[0, :, :]).convert('L')
+    label_img = ToPILImage()(mask).convert('L')
+    diff_img = ToPILImage()(np.abs(output - mask)).convert('L')
+
+    pred_imgs_path = os.path.join(save_path, 'pred_imgs')
+    if not os.path.exists(pred_imgs_path):
+        os.makedirs(pred_imgs_path)
+    pred_img.save(os.path.join(pred_imgs_path, img_id[0] + '.png'))
+
+    img_width, img_height = pred_img.size
+    text_height = 20
+    border_width = 2
+
+    mixed_img = Image.new('L', (img_width * 4 + border_width * 8, img_height + text_height + border_width * 2))
+    draw = ImageDraw.Draw(mixed_img)
+    font = ImageFont.load_default()
+
+    # Define labels
+    origin_text = "Original"
+    label_text = "Label"
+    pred_text = "Prediction"
+    diff_text = "Difference"
+
+    # Paste images and draw text and borders
+    mixed_img.paste(origin_img, (border_width, text_height + border_width))
+    draw.text((border_width, border_width // 2), origin_text, font=font, fill=255)
+    draw.rectangle([(border_width, border_width), (img_width + border_width, img_height + text_height + border_width)], outline=255)
+
+    mixed_img.paste(label_img, (img_width + border_width * 3, text_height + border_width))
+    draw.text((img_width + border_width * 3, border_width // 2), label_text, font=font, fill=255)
+    draw.rectangle([(img_width + border_width * 3, border_width), (img_width * 2 + border_width * 3, img_height + text_height + border_width)], outline=255)
+
+    mixed_img.paste(pred_img, (img_width * 2 + border_width * 5, text_height + border_width))
+    draw.text((img_width * 2 + border_width * 5, border_width // 2), pred_text, font=font, fill=255)
+    draw.rectangle([(img_width * 2 + border_width * 5, border_width), (img_width * 3 + border_width * 5, img_height + text_height + border_width)], outline=255)
+
+    mixed_img.paste(diff_img, (img_width * 3 + border_width * 7, text_height + border_width))
+    draw.text((img_width * 3 + border_width * 7, border_width // 2), diff_text, font=font, fill=255)
+    draw.rectangle([(img_width * 3 + border_width * 7, border_width), (img_width * 4 + border_width * 7, img_height + text_height + border_width)], outline=255)
+
+    # Save the mixed image
+    mixed_imgs_path = os.path.join(save_path, 'mix_imgs')
+    if not os.path.exists(mixed_imgs_path):
+        os.makedirs(mixed_imgs_path)
+    mixed_img.save(os.path.join(mixed_imgs_path, img_id[0] + '_mix.png'))
